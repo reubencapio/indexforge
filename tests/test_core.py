@@ -1,7 +1,6 @@
 """Tests for core domain models."""
 
 import pytest
-
 from indexforge.core.constituent import Constituent
 from indexforge.core.index import Index
 from indexforge.core.types import AssetClass, Currency, Region

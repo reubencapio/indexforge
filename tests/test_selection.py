@@ -1,7 +1,6 @@
 """Tests for selection criteria."""
 
 import pytest
-
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import Factor
 from indexforge.selection.composite import CompositeScore

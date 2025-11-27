@@ -1,7 +1,6 @@
 """Tests for weighting methods."""
 
 import pytest
-
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import WeightingScheme
 from indexforge.weighting.methods import WeightingMethod
