@@ -132,10 +132,7 @@ class SelectionCriteria:
             return sorted(scored, key=lambda x: x[1], reverse=True)
 
         if self.ranking_factor:
-            scored = [
-                (c, self._get_factor_value(c, self.ranking_factor) or 0.0)
-                for c in constituents
-            ]
+            scored = [(c, self._get_factor_value(c, self.ranking_factor) or 0.0) for c in constituents]
             return sorted(scored, key=lambda x: x[1], reverse=True)
 
         # Default: rank by market cap
