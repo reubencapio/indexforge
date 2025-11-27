@@ -33,8 +33,7 @@ jobs:
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
       
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --with dev
       
       - name: Check formatting with Black
         run: poetry run black --check --diff src/ tests/ examples/
@@ -76,8 +75,7 @@ jobs:
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
       
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --with dev
       
       - name: Run tests with coverage
         run: poetry run pytest tests/ -v --cov=indexforge --cov-report=xml --cov-report=term-missing
