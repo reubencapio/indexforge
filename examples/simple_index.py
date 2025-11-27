@@ -9,52 +9,54 @@ Run with: python examples/simple_index.py
 """
 
 from index_maker import (
+    Currency,
     Index,
     Universe,
     WeightingMethod,
-    Currency,
 )
 
 
 def main():
     """Create a simple equal-weighted index."""
-    
+
     print("=" * 60)
     print("Creating Simple Equal-Weighted Index")
     print("=" * 60)
     print()
-    
+
     # Step 1: Create the index
     index = Index.create(
         name="Simple Tech Index",
         identifier="SIMTECH",
         currency=Currency.USD,
         base_date="2024-01-01",
-        base_value=1000.0
+        base_value=1000.0,
     )
-    
+
     print(f"✅ Created index: {index.name} ({index.identifier})")
-    
+
     # Step 2: Define the universe (which stocks can be in the index)
-    universe = Universe.from_tickers([
-        "AAPL",   # Apple
-        "MSFT",   # Microsoft
-        "GOOGL",  # Alphabet
-        "AMZN",   # Amazon
-        "META",   # Meta
-    ])
-    
+    universe = Universe.from_tickers(
+        [
+            "AAPL",  # Apple
+            "MSFT",  # Microsoft
+            "GOOGL",  # Alphabet
+            "AMZN",  # Amazon
+            "META",  # Meta
+        ]
+    )
+
     print(f"✅ Defined universe with {len(universe.tickers)} stocks")
-    
+
     # Step 3: Set equal weighting
     weighting = WeightingMethod.equal_weight()
-    
+
     print("✅ Using equal-weight methodology")
-    
+
     # Step 4: Configure the index
     index.set_universe(universe)
     index.set_weighting_method(weighting)
-    
+
     # Step 5: Validate configuration
     report = index.validate()
     if report.is_valid:
@@ -63,7 +65,7 @@ def main():
         print("❌ Configuration issues found:")
         for error in report.errors:
             print(f"   - {error.message}")
-    
+
     print()
     print("Index Configuration Summary:")
     print(f"  Name: {index.name}")
@@ -72,10 +74,10 @@ def main():
     print(f"  Base Date: {index.base_date}")
     print(f"  Base Value: {index.base_value}")
     print()
-    
+
     # Note: To actually calculate the index, you need to fetch real data
     # Uncomment the lines below to calculate (requires internet connection)
-    
+
     # print("Calculating index...")
     # try:
     #     constituents = index.get_constituents(date="2024-11-15")
@@ -84,7 +86,7 @@ def main():
     #         print(f"  {c.ticker}: {c.name} - Weight: {c.weight:.2%}")
     # except Exception as e:
     #     print(f"Error: {e}")
-    
+
     print("=" * 60)
     print("Done! This was a simple example.")
     print("=" * 60)
@@ -92,4 +94,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
