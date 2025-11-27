@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "index-maker"
+name = "indexforge"
 version = "0.1.0"
 description = "A domain-driven Python module for creating and managing financial indices"
-authors = ["Index Maker Team <team@indexmaker.io>"]
+authors = ["Reuben Capio <reuben@indexforge.io>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/reubencapio/indexmaker"
