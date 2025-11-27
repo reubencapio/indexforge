@@ -3,6 +3,7 @@
 A domain-driven Python module for creating, managing, and analyzing financial indices. Designed for index professionals.
 
 [![CI](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml/badge.svg)](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/index-maker.svg)](https://badge.fury.io/py/index-maker)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -18,7 +19,13 @@ A domain-driven Python module for creating, managing, and analyzing financial in
 
 ## Installation
 
-### Using Poetry (Recommended)
+### From PyPI
+
+```bash
+pip install index-maker
+```
+
+### Using Poetry (Development)
 
 ```bash
 # Clone the repository
@@ -32,16 +39,11 @@ poetry install
 poetry shell
 ```
 
-### Using pip
+### From Source
 
 ```bash
 # Install from GitHub
 pip install git+https://github.com/reubencapio/indexmaker.git
-
-# Or clone and install locally
-git clone https://github.com/reubencapio/indexmaker.git
-cd indexmaker
-pip install .
 ```
 
 ## Quick Start
