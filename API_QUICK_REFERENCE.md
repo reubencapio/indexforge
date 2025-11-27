@@ -5,7 +5,7 @@
 ### Basic Index Creation
 
 ```python
-from index_maker import Index, Currency, IndexType
+from indexforge import Index, Currency, IndexType
 
 index = Index.create(
     name="My Index",
@@ -22,7 +22,7 @@ index = Index.create(
 
 ### Simple Universe
 ```python
-from index_maker import Universe, AssetClass, Region
+from indexforge import Universe, AssetClass, Region
 
 universe = (Universe.builder()
     .asset_class(AssetClass.EQUITIES)
@@ -56,7 +56,7 @@ universe = Universe.from_tickers(["AAPL", "MSFT", "GOOGL"])
 
 ### Top N by Market Cap
 ```python
-from index_maker import SelectionCriteria, Factor
+from indexforge import SelectionCriteria, Factor
 
 selection = (SelectionCriteria.builder()
     .ranking_by(Factor.MARKET_CAP)
@@ -80,7 +80,7 @@ selection = (SelectionCriteria.builder()
 
 ### Multi-Factor Selection
 ```python
-from index_maker import CompositeScore
+from indexforge import CompositeScore
 
 selection = (SelectionCriteria.builder()
     .composite_score(
@@ -101,7 +101,7 @@ selection = (SelectionCriteria.builder()
 
 ### Equal Weight
 ```python
-from index_maker import WeightingMethod
+from indexforge import WeightingMethod
 
 weighting = WeightingMethod.equal_weight()
 ```
@@ -134,7 +134,7 @@ weighting = (WeightingMethod.factor_based()
 
 ### Quarterly
 ```python
-from index_maker import RebalancingSchedule
+from indexforge import RebalancingSchedule
 
 rebalancing = RebalancingSchedule.quarterly()
 # Or with specific months
@@ -161,7 +161,7 @@ rebalancing = RebalancingSchedule.monthly(day=1)
 ## Complete Example - Copy & Modify
 
 ```python
-from index_maker import (
+from indexforge import (
     Index, Currency, IndexType,
     Universe, AssetClass, Region,
     SelectionCriteria, Factor,
@@ -264,7 +264,7 @@ print(f"Sharpe: {backtest.sharpe_ratio:.2f}")
 
 ### Generate Documents
 ```python
-from index_maker import DocumentGenerator
+from indexforge import DocumentGenerator
 
 DocumentGenerator.for_index(index).generate("GUIDELINE").save_to("guideline.pdf")
 DocumentGenerator.for_index(index).generate("FACTSHEET").save_to("factsheet.pdf")
@@ -285,7 +285,7 @@ index = Index.load("my_index.json")
 
 ### Custom Data Source
 ```python
-from index_maker import DataProvider
+from indexforge import DataProvider
 
 data_provider = (DataProvider.builder()
     .market_data("Bloomberg")
@@ -300,7 +300,7 @@ index.set_data_provider(data_provider)
 
 ### Validation Rules
 ```python
-from index_maker import ValidationRules
+from indexforge import ValidationRules
 
 validation = (ValidationRules.builder()
     .min_constituents(30)
@@ -417,7 +417,7 @@ Factor.EARNINGS_GROWTH
 4. **Use Type Hints**: Better IDE support
    ```python
    from typing import List
-   from index_maker import Constituent
+   from indexforge import Constituent
    
    def analyze(constituents: List[Constituent]) -> float:
        ...

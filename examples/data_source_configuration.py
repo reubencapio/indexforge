@@ -17,7 +17,7 @@ from typing import Optional
 
 import pandas as pd
 
-from index_maker import (
+from indexforge import (
     Constituent,
     Currency,
     DataConnector,

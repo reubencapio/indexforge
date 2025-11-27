@@ -5,8 +5,8 @@ description = "A domain-driven Python module for creating and managing financial
 authors = ["Reuben Capio <reuben@indexforge.io>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/reubencapio/indexmaker"
-repository = "https://github.com/reubencapio/indexmaker"
+homepage = "https://github.com/reubencapio/indexforge"
+repository = "https://github.com/reubencapio/indexforge"
 keywords = [
     "finance",
     "index",
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
-packages = [{include = "index_maker", from = "src"}]
+packages = [{include = "indexforge", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -97,7 +97,7 @@ ignore = [
 ]
 
 [tool.coverage.run]
-source = ["src/index_maker"]
+source = ["src/indexforge"]
 branch = true
 omit = ["*/tests/*"]
 

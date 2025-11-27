@@ -2,7 +2,7 @@
 
 A domain-driven Python module for creating, managing, and analyzing financial indices. Designed for index professionals.
 
-[![CI](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml/badge.svg)](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml)
+[![CI](https://github.com/reubencapio/indexforge/actions/workflows/ci.yml/badge.svg)](https://github.com/reubencapio/indexforge/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/indexforge.svg)](https://badge.fury.io/py/indexforge)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -29,7 +29,7 @@ pip install indexforge
 
 ```bash
 # Clone the repository
-git clone https://github.com/reubencapio/indexmaker.git
+git clone https://github.com/reubencapio/indexforge.git
 cd indexmaker
 
 # Install with Poetry
@@ -43,7 +43,7 @@ poetry shell
 
 ```bash
 # Install from GitHub
-pip install git+https://github.com/reubencapio/indexmaker.git
+pip install git+https://github.com/reubencapio/indexforge.git
 ```
 
 ## Quick Start
@@ -51,7 +51,7 @@ pip install git+https://github.com/reubencapio/indexmaker.git
 ### Create a Simple Index
 
 ```python
-from index_maker import Index, Universe, WeightingMethod, Currency
+from indexforge import Index, Universe, WeightingMethod, Currency
 
 # Create an index
 index = Index.create(
@@ -78,7 +78,7 @@ for c in constituents:
 ### Market Cap Weighted Index with Caps
 
 ```python
-from index_maker import (
+from indexforge import (
     Index, Universe, SelectionCriteria, WeightingMethod,
     RebalancingSchedule, Currency, Factor
 )
@@ -136,7 +136,7 @@ print(f"Sharpe Ratio: {result.sharpe_ratio:.2f}")
 ### Using Custom Data Source
 
 ```python
-from index_maker import DataConnector, DataProvider, Constituent
+from indexforge import DataConnector, DataProvider, Constituent
 import pandas as pd
 
 class MyDataConnector(DataConnector):
@@ -227,7 +227,7 @@ poetry install
 poetry run pytest
 
 # Run with coverage
-poetry run pytest --cov=index_maker
+poetry run pytest --cov=indexforge
 
 # Format code
 poetry run black src/ tests/ examples/
@@ -236,7 +236,7 @@ poetry run black src/ tests/ examples/
 poetry run ruff check src/ tests/ examples/
 
 # Type check
-poetry run mypy src/index_maker
+poetry run mypy src/indexforge
 ```
 
 Or use the Makefile shortcuts:
@@ -252,8 +252,8 @@ make all        # Format + Lint + Test
 ## Project Structure
 
 ```
-index_maker/
-├── src/index_maker/
+indexforge/
+├── src/indexforge/
 │   ├── core/           # Domain models (Index, Universe, Constituent)
 │   ├── selection/      # Selection criteria and factors
 │   ├── weighting/      # Weighting methods
