@@ -8,7 +8,7 @@ using free Yahoo Finance data.
 Run with: python examples/simple_index.py
 """
 
-from index_maker import (
+from indexforge import (
     Currency,
     Index,
     Universe,

@@ -5,7 +5,7 @@ This module provides an intuitive, type-safe API for creating, managing,
 and analyzing financial indices. Designed for index professionals.
 
 Example:
-    >>> from index_maker import Index, Universe, WeightingMethod, Currency
+    >>> from indexforge import Index, Universe, WeightingMethod, Currency
     >>>
     >>> index = Index.create(
     ...     name="Tech Leaders Index",
@@ -22,9 +22,9 @@ Example:
     >>> value = index.calculate(date="2025-11-15")
 """
 
-from index_maker.core.constituent import Constituent
-from index_maker.core.index import Index
-from index_maker.core.types import (
+from indexforge.core.constituent import Constituent
+from indexforge.core.index import Index
+from indexforge.core.types import (
     AssetClass,
     Currency,
     Factor,
@@ -33,16 +33,16 @@ from index_maker.core.types import (
     Region,
     Sector,
 )
-from index_maker.core.universe import Universe, UniverseBuilder
-from index_maker.data.connectors.base import DataConnector
-from index_maker.data.connectors.yahoo import YahooFinanceConnector
-from index_maker.data.provider import DataProvider, DataProviderBuilder
-from index_maker.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
-from index_maker.selection.composite import CompositeScore, CompositeScoreBuilder
-from index_maker.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
-from index_maker.validation.report import ValidationReport
-from index_maker.validation.rules import ValidationRules, ValidationRulesBuilder
-from index_maker.weighting.methods import WeightingMethod, WeightingMethodBuilder
+from indexforge.core.universe import Universe, UniverseBuilder
+from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.yahoo import YahooFinanceConnector
+from indexforge.data.provider import DataProvider, DataProviderBuilder
+from indexforge.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
+from indexforge.selection.composite import CompositeScore, CompositeScoreBuilder
+from indexforge.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
+from indexforge.validation.report import ValidationReport
+from indexforge.validation.rules import ValidationRules, ValidationRulesBuilder
+from indexforge.weighting.methods import WeightingMethod, WeightingMethodBuilder
 
 __version__ = "0.1.0"
 

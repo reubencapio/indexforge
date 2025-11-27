@@ -43,7 +43,7 @@ jobs:
         run: poetry run ruff check src/ tests/ examples/
       
       - name: Type check with mypy
-        run: poetry run mypy src/index_maker --ignore-missing-imports
+        run: poetry run mypy src/indexforge --ignore-missing-imports
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -80,7 +80,7 @@ jobs:
         run: poetry install --no-interaction
       
       - name: Run tests with coverage
-        run: poetry run pytest tests/ -v --cov=index_maker --cov-report=xml --cov-report=term-missing
+        run: poetry run pytest tests/ -v --cov=indexforge --cov-report=xml --cov-report=term-missing
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

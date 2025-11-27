@@ -7,7 +7,7 @@ This document outlines the proposed module structure for the Index Maker library
 ## Package Structure
 
 ```
-index_maker/
+indexforge/
 │
 ├── __init__.py                 # Main exports
 │
@@ -408,7 +408,7 @@ Rebalancing Date Reached
 ### Custom Selection Rules
 
 ```python
-from index_maker import CustomRule, RuleContext
+from indexforge import CustomRule, RuleContext
 
 @CustomRule.selection
 def my_custom_filter(context: RuleContext) -> bool:
@@ -428,7 +428,7 @@ selection = (SelectionCriteria.builder()
 ### Custom Weighting
 
 ```python
-from index_maker import CustomWeighting
+from indexforge import CustomWeighting
 
 class MyWeightingMethod(CustomWeighting):
     def calculate_weights(self, constituents: List[Constituent]) -> Dict[str, float]:
@@ -446,7 +446,7 @@ index.set_weighting_method(weighting)
 ### Custom Data Source
 
 ```python
-from index_maker import DataConnector
+from indexforge import DataConnector
 
 class MyDataConnector(DataConnector):
     def get_prices(self, identifiers: List[str], date: str) -> pd.DataFrame:
@@ -468,7 +468,7 @@ index.set_data_provider(data_provider)
 ### Event Handlers
 
 ```python
-from index_maker import IndexEvent
+from indexforge import IndexEvent
 
 @index.on(IndexEvent.CONSTITUENT_ADDED)
 def on_constituent_added(event):

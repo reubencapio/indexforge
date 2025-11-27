@@ -10,9 +10,9 @@ from typing import Optional
 
 import pandas as pd
 
-from index_maker.core.constituent import Constituent
-from index_maker.data.connectors.base import DataConnector
-from index_maker.data.connectors.yahoo import YahooFinanceConnector
+from indexforge.core.constituent import Constituent
+from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.yahoo import YahooFinanceConnector
 
 logger = logging.getLogger(__name__)
 

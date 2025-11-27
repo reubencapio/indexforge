@@ -20,7 +20,7 @@ This document outlines a domain-driven Python API for creating and managing indi
 ### 1. Index Creation and Basic Configuration
 
 ```python
-from index_maker import Index, IndexType, Currency
+from indexforge import Index, IndexType, Currency
 
 # Create a new index
 index = Index.create(
@@ -45,7 +45,7 @@ index = Index.create(
 ### 2. Defining the Index Universe
 
 ```python
-from index_maker import Universe, AssetClass, Region, ExchangeList
+from indexforge import Universe, AssetClass, Region, ExchangeList
 
 # Define the investment universe
 universe = (Universe.builder()
@@ -79,7 +79,7 @@ universe = (Universe.builder()
 ### 3. Selection Criteria
 
 ```python
-from index_maker import SelectionCriteria, RankingMethod, Factor
+from indexforge import SelectionCriteria, RankingMethod, Factor
 
 # Define how constituents are selected
 selection = (SelectionCriteria.builder()
@@ -98,7 +98,7 @@ index.set_selection_criteria(selection)
 **Advanced Selection - Multi-Factor:**
 
 ```python
-from index_maker import CompositeScore, Factor
+from indexforge import CompositeScore, Factor
 
 # Combine multiple factors
 selection = (SelectionCriteria.builder()
@@ -124,7 +124,7 @@ selection = (SelectionCriteria.builder()
 ### 4. Weighting Methodology
 
 ```python
-from index_maker import WeightingMethod, CapFactor
+from indexforge import WeightingMethod, CapFactor
 
 # Simple equal weighting
 weighting = WeightingMethod.equal_weight()
@@ -154,7 +154,7 @@ index.set_weighting_method(weighting)
 ### 5. Rebalancing and Review Schedule
 
 ```python
-from index_maker import RebalancingSchedule, ReviewType
+from indexforge import RebalancingSchedule, ReviewType
 
 # Quarterly rebalancing
 rebalancing = (RebalancingSchedule.builder()
@@ -197,7 +197,7 @@ rebalancing = (RebalancingSchedule.builder()
 ### 6. Corporate Actions Handling
 
 ```python
-from index_maker import CorporateActions
+from indexforge import CorporateActions
 
 # Define corporate action policies
 ca_policy = (CorporateActions.builder()
@@ -220,7 +220,7 @@ index.set_corporate_actions_policy(ca_policy)
 ### 7. Calculation Methodology
 
 ```python
-from index_maker import CalculationMethod, DivisorAdjustment
+from indexforge import CalculationMethod, DivisorAdjustment
 
 # Set calculation parameters
 calculation = (CalculationMethod.builder()
@@ -272,7 +272,7 @@ timeseries = index.get_timeseries(
 ### 9. Data Integration
 
 ```python
-from index_maker import DataProvider, MarketDataSource
+from indexforge import DataProvider, MarketDataSource
 
 # Connect to data sources
 data_provider = (DataProvider.builder()
@@ -297,7 +297,7 @@ index.use_standard_data_sources()
 ### 10. Validation and Compliance
 
 ```python
-from index_maker import ValidationRules, ComplianceCheck
+from indexforge import ValidationRules, ComplianceCheck
 
 # Set validation rules
 validation = (ValidationRules.builder()
@@ -375,7 +375,7 @@ print(f"Turnover Increase: {comparison.turnover_diff:.2%}")
 ### 12. Documentation Generation
 
 ```python
-from index_maker import DocumentGenerator, DocumentType
+from indexforge import DocumentGenerator, DocumentType
 
 # Generate index guideline
 guideline = (DocumentGenerator
@@ -444,7 +444,7 @@ us_subindex = (index.create_subindex(
 ### 14. Publishing and Distribution
 
 ```python
-from index_maker import Publisher, DataFormat
+from indexforge import Publisher, DataFormat
 
 # Publish index data
 publisher = (Publisher.for_index(index)
@@ -480,7 +480,7 @@ publisher.schedule(
 ### 15. Comprehensive Example - Putting It All Together
 
 ```python
-from index_maker import (
+from indexforge import (
     Index, IndexType, Currency, Universe, AssetClass, Region,
     SelectionCriteria, Factor, WeightingMethod, RebalancingSchedule,
     CorporateActions, CalculationMethod, ValidationRules
@@ -624,7 +624,7 @@ index.save("global-sustainable-tech-index.json")
 ### 16. Custom Rules and Logic
 
 ```python
-from index_maker import CustomRule, RuleContext
+from indexforge import CustomRule, RuleContext
 
 # Define custom selection rule
 @CustomRule.selection
@@ -652,7 +652,7 @@ selection = (SelectionCriteria.builder()
 ### 17. Event-Driven Updates
 
 ```python
-from index_maker import EventListener, IndexEvent
+from indexforge import EventListener, IndexEvent
 
 # Set up event listeners
 @index.on(IndexEvent.CONSTITUENT_ADDED)
@@ -678,7 +678,7 @@ index.calculate_with_events(date="2025-11-15")
 ### 18. Multi-Index Management
 
 ```python
-from index_maker import IndexFamily
+from indexforge import IndexFamily
 
 # Create an index family
 family = IndexFamily.create(

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Optional
 
-from index_maker.core.types import RebalancingFrequency
+from indexforge.core.types import RebalancingFrequency
 
 
 @dataclass

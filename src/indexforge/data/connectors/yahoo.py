@@ -9,9 +9,9 @@ from typing import Optional
 
 import pandas as pd
 
-from index_maker.core.constituent import Constituent
-from index_maker.core.types import Currency
-from index_maker.data.connectors.base import DataConnector
+from indexforge.core.constituent import Constituent
+from indexforge.core.types import Currency
+from indexforge.data.connectors.base import DataConnector
 
 logger = logging.getLogger(__name__)
 

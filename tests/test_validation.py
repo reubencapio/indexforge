@@ -2,9 +2,9 @@
 
 import pytest
 
-from index_maker.core.constituent import Constituent
-from index_maker.validation.report import ValidationError, ValidationReport, ValidationSeverity
-from index_maker.validation.rules import ValidationRules
+from indexforge.core.constituent import Constituent
+from indexforge.validation.report import ValidationError, ValidationReport, ValidationSeverity
+from indexforge.validation.rules import ValidationRules
 
 
 class TestValidationReport:

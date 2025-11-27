@@ -7,9 +7,9 @@ Defines how constituents are selected from the investment universe.
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-from index_maker.core.constituent import Constituent
-from index_maker.core.types import Factor
-from index_maker.selection.composite import CompositeScore
+from indexforge.core.constituent import Constituent
+from indexforge.core.types import Factor
+from indexforge.selection.composite import CompositeScore
 
 
 @dataclass

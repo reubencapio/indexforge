@@ -5,8 +5,8 @@ Composite scoring for multi-factor constituent selection.
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-from index_maker.core.constituent import Constituent
-from index_maker.core.types import Factor
+from indexforge.core.constituent import Constituent
+from indexforge.core.types import Factor
 
 
 @dataclass
