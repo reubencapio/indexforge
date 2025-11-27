@@ -18,24 +18,30 @@ A domain-driven Python module for creating, managing, and analyzing financial in
 
 ## Installation
 
-### From Source (Development)
+### Using Poetry (Recommended)
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/index-maker.git
-cd index-maker
+git clone https://github.com/reubencapio/indexmaker.git
+cd indexmaker
 
-# Install in development mode
-pip install -e .
+# Install with Poetry
+poetry install
 
-# Or install with dev dependencies
-pip install -e ".[dev]"
+# Activate the virtual environment
+poetry shell
 ```
 
-### Install Dependencies Only
+### Using pip
 
 ```bash
-pip install -r requirements.txt
+# Install from GitHub
+pip install git+https://github.com/reubencapio/indexmaker.git
+
+# Or clone and install locally
+git clone https://github.com/reubencapio/indexmaker.git
+cd indexmaker
+pip install .
 ```
 
 ## Quick Start
@@ -204,22 +210,41 @@ See the `examples/` directory:
 Run examples:
 
 ```bash
-python examples/simple_index.py
-python examples/market_cap_index.py
-python examples/custom_data_source.py
+poetry run python examples/simple_index.py
+poetry run python examples/market_cap_index.py
+poetry run python examples/custom_data_source.py
 ```
 
-## Testing
+## Development
 
 ```bash
+# Install dependencies
+poetry install
+
 # Run all tests
-pytest
+poetry run pytest
 
 # Run with coverage
-pytest --cov=index_maker
+poetry run pytest --cov=index_maker
 
-# Run specific test file
-pytest tests/test_weighting.py
+# Format code
+poetry run black src/ tests/ examples/
+
+# Lint code
+poetry run ruff check src/ tests/ examples/
+
+# Type check
+poetry run mypy src/index_maker
+```
+
+Or use the Makefile shortcuts:
+
+```bash
+make test       # Run tests
+make coverage   # Tests with coverage
+make format     # Format with Black
+make lint       # Run Ruff + Mypy
+make all        # Format + Lint + Test
 ```
 
 ## Project Structure
