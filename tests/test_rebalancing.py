@@ -3,7 +3,6 @@
 from datetime import date
 
 import pytest
-
 from indexforge.core.types import RebalancingFrequency
 from indexforge.rebalancing.schedule import RebalancingSchedule
 

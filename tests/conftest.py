@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 import pytest
-
 from indexforge.core.constituent import Constituent
 from indexforge.core.index import Index
 from indexforge.core.types import Currency
