@@ -174,7 +174,7 @@ class YahooFinanceConnector(DataConnector):
             return self._info_cache[ticker]
 
         try:
-            info = stock.info
+            info: dict = stock.info
             if self._cache_enabled:
                 self._info_cache[ticker] = info
             return info
@@ -183,11 +183,11 @@ class YahooFinanceConnector(DataConnector):
 
     def _calculate_free_float(self, info: dict) -> float:
         """Calculate free float factor from Yahoo Finance data."""
-        shares_outstanding = info.get("sharesOutstanding", 0)
-        float_shares = info.get("floatShares", 0)
+        shares_outstanding: float = info.get("sharesOutstanding", 0) or 0
+        float_shares: float = info.get("floatShares", 0) or 0
 
         if shares_outstanding and float_shares:
-            return min(float_shares / shares_outstanding, 1.0)
+            return float(min(float_shares / shares_outstanding, 1.0))
         return 1.0  # Default to 100% free float
 
     def get_market_cap(

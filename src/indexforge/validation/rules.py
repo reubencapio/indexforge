@@ -99,7 +99,7 @@ class ValidationRules:
 
         # Check sector concentration
         if self.max_single_sector_weight:
-            sector_weights = {}
+            sector_weights: dict[str, float] = {}
             for c in constituents:
                 sector_weights[c.sector] = sector_weights.get(c.sector, 0) + c.weight
 
@@ -115,7 +115,7 @@ class ValidationRules:
 
         # Check country concentration
         if self.max_single_country_weight:
-            country_weights = {}
+            country_weights: dict[str, float] = {}
             for c in constituents:
                 country_weights[c.country] = country_weights.get(c.country, 0) + c.weight
 
