@@ -132,8 +132,11 @@ class SelectionCriteria:
             return sorted(scored, key=lambda x: x[1], reverse=True)
 
         if self.ranking_factor:
-            scored = [(c, self._get_factor_value(c, self.ranking_factor)) for c in constituents]
-            return sorted(scored, key=lambda x: x[1] or 0, reverse=True)
+            scored = [
+                (c, self._get_factor_value(c, self.ranking_factor) or 0.0)
+                for c in constituents
+            ]
+            return sorted(scored, key=lambda x: x[1], reverse=True)
 
         # Default: rank by market cap
         scored = [(c, c.market_cap) for c in constituents]
@@ -156,6 +159,9 @@ class SelectionCriteria:
         self, ranked: list[tuple[Constituent, float]], current: list[Constituent]
     ) -> list[Constituent]:
         """Apply buffer rules to selection."""
+        if not self.buffer_rules:
+            return [c for c, _ in ranked[: self.select_count]]
+
         current_tickers = {c.ticker for c in current}
         selected: list[Constituent] = []
 
