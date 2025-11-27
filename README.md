@@ -277,3 +277,4 @@ Contributions welcome! Please read the contributing guidelines first.
 ## Acknowledgments
 
 Inspired by industry-standard index methodologies.
+
