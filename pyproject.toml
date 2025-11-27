@@ -1,17 +1,12 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "index-maker"
 version = "0.1.0"
 description = "A domain-driven Python module for creating and managing financial indices"
+authors = ["Index Maker Team <team@indexmaker.io>"]
+license = "MIT"
 readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.9"
-authors = [
-    {name = "Index Maker Team", email = "team@indexmaker.io"}
-]
+homepage = "https://github.com/reubencapio/indexmaker"
+repository = "https://github.com/reubencapio/indexmaker"
 keywords = [
     "finance",
     "index",
@@ -36,36 +31,28 @@ classifiers = [
     "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
-dependencies = [
-    "pandas>=2.0.0",
-    "numpy>=1.24.0",
-    "yfinance>=0.2.0",
-]
+packages = [{include = "index_maker", from = "src"}]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-mock>=3.10.0",
-    "black>=23.0.0",
-    "mypy>=1.0.0",
-    "ruff>=0.1.0",
-]
-all = [
-    "matplotlib>=3.7.0",
-    "alpha-vantage>=2.3.0",
-]
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^2.0.0"
+numpy = "^1.24.0"
+yfinance = "^0.2.0"
 
-[project.urls]
-Homepage = "https://github.com/reubencapio/indexmaker"
-Repository = "https://github.com/reubencapio/indexmaker"
-Issues = "https://github.com/reubencapio/indexmaker/issues"
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.10.0"
+black = "^23.0.0"
+mypy = "^1.0.0"
+ruff = "^0.1.0"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.poetry.group.extras.dependencies]
+matplotlib = "^3.7.0"
 
-[tool.setuptools.package-data]
-"*" = ["py.typed"]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -123,4 +110,3 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 show_missing = true
-

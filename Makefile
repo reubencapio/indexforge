@@ -3,27 +3,27 @@
 help:  ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-install:  ## Install the package
-	pip install -e .
+install:  ## Install dependencies
+	poetry install
 
-dev:  ## Install development dependencies
-	pip install -e ".[dev]"
+dev:  ## Install with dev dependencies (same as install for Poetry)
+	poetry install
 
 lint:  ## Run linters (ruff + mypy)
-	ruff check src/ tests/ examples/
-	mypy src/index_maker --ignore-missing-imports
+	poetry run ruff check src/ tests/ examples/
+	poetry run mypy src/index_maker --ignore-missing-imports
 
 format:  ## Format code with black
-	black src/ tests/ examples/
+	poetry run black src/ tests/ examples/
 
 format-check:  ## Check formatting without making changes
-	black --check --diff src/ tests/ examples/
+	poetry run black --check --diff src/ tests/ examples/
 
 test:  ## Run tests
-	pytest tests/ -v
+	poetry run pytest tests/ -v
 
 coverage:  ## Run tests with coverage report
-	pytest tests/ -v --cov=index_maker --cov-report=term-missing --cov-report=html
+	poetry run pytest tests/ -v --cov=index_maker --cov-report=term-missing --cov-report=html
 	@echo "Coverage report generated in htmlcov/index.html"
 
 clean:  ## Clean build artifacts
@@ -40,7 +40,15 @@ clean:  ## Clean build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +
 
 build:  ## Build the package
-	python -m build
+	poetry build
+
+lock:  ## Update poetry.lock
+	poetry lock
+
+update:  ## Update dependencies
+	poetry update
+
+shell:  ## Activate poetry shell
+	poetry shell
 
 all: format lint test  ## Run format, lint, and test
-
