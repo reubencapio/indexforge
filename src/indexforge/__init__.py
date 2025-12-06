@@ -27,6 +27,7 @@ from indexforge.core.index import Index
 from indexforge.core.types import (
     AssetClass,
     Currency,
+    Country,
     Factor,
     IndexType,
     Industry,
@@ -44,7 +45,7 @@ from indexforge.validation.report import ValidationReport
 from indexforge.validation.rules import ValidationRules, ValidationRulesBuilder
 from indexforge.weighting.methods import WeightingMethod, WeightingMethodBuilder
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     # Core
@@ -57,6 +58,7 @@ __all__ = [
     "IndexType",
     "AssetClass",
     "Region",
+    "Country",
     "Factor",
     "Sector",
     "Industry",

@@ -84,6 +84,75 @@ class Region(str, Enum):
         return self.value
 
 
+class Country(str, Enum):
+    """Country codes used for universe filtering."""
+
+    # North America
+    UNITED_STATES = "United States"
+    CANADA = "Canada"
+    MEXICO = "Mexico"
+
+    # Europe - Developed
+    AUSTRIA = "Austria"
+    BELGIUM = "Belgium"
+    DENMARK = "Denmark"
+    FINLAND = "Finland"
+    FRANCE = "France"
+    GERMANY = "Germany"
+    GREECE = "Greece"
+    IRELAND = "Ireland"
+    ITALY = "Italy"
+    LUXEMBOURG = "Luxembourg"
+    NETHERLANDS = "Netherlands"
+    NORWAY = "Norway"
+    PORTUGAL = "Portugal"
+    SPAIN = "Spain"
+    SWEDEN = "Sweden"
+    SWITZERLAND = "Switzerland"
+    UNITED_KINGDOM = "United Kingdom"
+
+    # Europe - Emerging
+    CZECH_REPUBLIC = "Czech Republic"
+    HUNGARY = "Hungary"
+    POLAND = "Poland"
+    TURKEY = "Turkey"
+
+    # Asia-Pacific - Developed
+    AUSTRALIA = "Australia"
+    HONG_KONG = "Hong Kong"
+    JAPAN = "Japan"
+    NEW_ZEALAND = "New Zealand"
+    SINGAPORE = "Singapore"
+
+    # Asia-Pacific - Emerging
+    CHINA = "China"
+    INDIA = "India"
+    INDONESIA = "Indonesia"
+    MALAYSIA = "Malaysia"
+    PHILIPPINES = "Philippines"
+    SOUTH_KOREA = "South Korea"
+    TAIWAN = "Taiwan"
+    THAILAND = "Thailand"
+
+    # Latin America
+    ARGENTINA = "Argentina"
+    BRAZIL = "Brazil"
+    CHILE = "Chile"
+    COLOMBIA = "Colombia"
+
+    # Middle East & Africa
+    EGYPT = "Egypt"
+    ISRAEL = "Israel"
+    KUWAIT = "Kuwait"
+    QATAR = "Qatar"
+    SAUDI_ARABIA = "Saudi Arabia"
+    SOUTH_AFRICA = "South Africa"
+    UNITED_ARAB_EMIRATES = "United Arab Emirates"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class Factor(str, Enum):
     """Factors for selection and weighting."""
 
