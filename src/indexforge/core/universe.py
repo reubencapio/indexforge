@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional, Union
 
 from indexforge.core.constituent import Constituent
-from indexforge.core.types import AssetClass, Currency, Region, Sector
+from indexforge.core.types import AssetClass, Country, Currency, Region, Sector
 
 
 @dataclass
@@ -274,14 +274,24 @@ class UniverseBuilder:
         self._regions = regions
         return self
 
-    def countries(self, countries: list[str]) -> "UniverseBuilder":
-        """Set specific countries to include."""
-        self._countries = countries
+    def countries(self, countries: list[Union[Country, Region, str]]) -> "UniverseBuilder":
+        """
+        Set specific countries to include.
+
+        Args:
+            countries: ISO country codes or Region enums
+        """
+        self._countries = [str(c) for c in countries]
         return self
 
-    def exclude_countries(self, countries: list[str]) -> "UniverseBuilder":
-        """Set countries to exclude."""
-        self._exclude_countries = countries
+    def exclude_countries(self, countries: list[Union[Country, Region, str]]) -> "UniverseBuilder":
+        """
+        Set countries to exclude.
+
+        Args:
+            countries: ISO country codes or Region enums
+        """
+        self._exclude_countries = [str(c) for c in countries]
         return self
 
     def sectors(self, sectors: list[Union[Sector, str]]) -> "UniverseBuilder":
