@@ -1,7 +1,7 @@
 """Validation rules and compliance checking."""
 
-from indexforge.validation.report import ValidationError, ValidationReport
-from indexforge.validation.rules import ValidationRules, ValidationRulesBuilder
+from indexmaker.validation.report import ValidationError, ValidationReport
+from indexmaker.validation.rules import ValidationRules, ValidationRulesBuilder
 
 __all__ = [
     "ValidationRules",

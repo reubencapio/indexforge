@@ -5,8 +5,8 @@ Validation rules for index configuration and compliance.
 from dataclasses import dataclass
 from typing import Optional
 
-from indexforge.core.constituent import Constituent
-from indexforge.validation.report import ValidationReport
+from indexmaker.core.constituent import Constituent
+from indexmaker.validation.report import ValidationReport
 
 
 @dataclass

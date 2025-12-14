@@ -13,15 +13,15 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
-from indexforge.core.constituent import Constituent
-from indexforge.core.types import Currency, IndexType
-from indexforge.core.universe import Universe
-from indexforge.data.provider import DataProvider
-from indexforge.rebalancing.schedule import RebalancingSchedule
-from indexforge.selection.criteria import SelectionCriteria
-from indexforge.validation.report import ValidationReport
-from indexforge.validation.rules import ValidationRules
-from indexforge.weighting.methods import WeightingMethod
+from indexmaker.core.constituent import Constituent
+from indexmaker.core.types import Currency, IndexType
+from indexmaker.core.universe import Universe
+from indexmaker.data.provider import DataProvider
+from indexmaker.rebalancing.schedule import RebalancingSchedule
+from indexmaker.selection.criteria import SelectionCriteria
+from indexmaker.validation.report import ValidationReport
+from indexmaker.validation.rules import ValidationRules
+from indexmaker.weighting.methods import WeightingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class Index:
     - Data: Where market data comes from
 
     Example:
-        >>> from indexforge import Index, Universe, WeightingMethod, Currency
+        >>> from indexmaker import Index, Universe, WeightingMethod, Currency
         >>>
         >>> # Create an index
         >>> index = Index.create(

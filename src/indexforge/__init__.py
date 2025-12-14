@@ -5,7 +5,7 @@ This module provides an intuitive, type-safe API for creating, managing,
 and analyzing financial indices. Designed for index professionals.
 
 Example:
-    >>> from indexforge import Index, Universe, WeightingMethod, Currency
+    >>> from indexmaker import Index, Universe, WeightingMethod, Currency
     >>>
     >>> index = Index.create(
     ...     name="Tech Leaders Index",
@@ -22,9 +22,9 @@ Example:
     >>> value = index.calculate(date="2025-11-15")
 """
 
-from indexforge.core.constituent import Constituent
-from indexforge.core.index import Index
-from indexforge.core.types import (
+from indexmaker.core.constituent import Constituent
+from indexmaker.core.index import Index
+from indexmaker.core.types import (
     AssetClass,
     Currency,
     Country,
@@ -34,16 +34,16 @@ from indexforge.core.types import (
     Region,
     Sector,
 )
-from indexforge.core.universe import Universe, UniverseBuilder
-from indexforge.data.connectors.base import DataConnector
-from indexforge.data.connectors.yahoo import YahooFinanceConnector
-from indexforge.data.provider import DataProvider, DataProviderBuilder
-from indexforge.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
-from indexforge.selection.composite import CompositeScore, CompositeScoreBuilder
-from indexforge.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
-from indexforge.validation.report import ValidationReport
-from indexforge.validation.rules import ValidationRules, ValidationRulesBuilder
-from indexforge.weighting.methods import WeightingMethod, WeightingMethodBuilder
+from indexmaker.core.universe import Universe, UniverseBuilder
+from indexmaker.data.connectors.base import DataConnector
+from indexmaker.data.connectors.yahoo import YahooFinanceConnector
+from indexmaker.data.provider import DataProvider, DataProviderBuilder
+from indexmaker.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
+from indexmaker.selection.composite import CompositeScore, CompositeScoreBuilder
+from indexmaker.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
+from indexmaker.validation.report import ValidationReport
+from indexmaker.validation.rules import ValidationRules, ValidationRulesBuilder
+from indexmaker.weighting.methods import WeightingMethod, WeightingMethodBuilder
 
 __version__ = "0.1.1"
 

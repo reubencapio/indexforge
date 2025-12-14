@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-from indexforge.core.types import Currency
+from indexmaker.core.types import Currency
 
 
 @dataclass

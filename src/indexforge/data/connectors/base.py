@@ -10,7 +10,7 @@ from typing import Optional
 
 import pandas as pd
 
-from indexforge.core.constituent import Constituent
+from indexmaker.core.constituent import Constituent
 
 
 class DataConnector(ABC):

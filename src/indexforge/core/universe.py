@@ -7,8 +7,8 @@ The universe defines which securities are eligible for inclusion in an index.
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Union
 
-from indexforge.core.constituent import Constituent
-from indexforge.core.types import AssetClass, Country, Currency, Region, Sector
+from indexmaker.core.constituent import Constituent
+from indexmaker.core.types import AssetClass, Country, Currency, Region, Sector
 
 
 @dataclass

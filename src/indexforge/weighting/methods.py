@@ -7,8 +7,8 @@ Defines how constituents are weighted within an index.
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from indexforge.core.constituent import Constituent
-from indexforge.core.types import Factor, WeightingScheme
+from indexmaker.core.constituent import Constituent
+from indexmaker.core.types import Factor, WeightingScheme
 
 
 @dataclass
