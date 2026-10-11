@@ -318,11 +318,16 @@ class Index:
         if not self._universe:
             return
 
-        # Get tickers from universe
-        tickers = self._universe.tickers if self._universe.tickers else []
+        # Candidates: the universe's own list, or a screen of the data source
+        tickers = list(self._universe.tickers)
+        if not tickers and self._universe.screen:
+            tickers = self._screen_candidates()
 
         if not tickers:
             logger.warning("No tickers in universe")
+            self._constituents = []
+            self._exclusions = {}
+            self._last_calculation_date = as_of_date
             return
 
         # Fetch constituent data
@@ -386,6 +391,21 @@ class Index:
 
         self._constituents = selected
         self._last_calculation_date = as_of_date
+
+    def _screen_candidates(self) -> list[str]:
+        """Ask the data source which companies the universe rules could admit."""
+        universe = self._universe
+        assert universe is not None
+        if not universe.countries:
+            raise ValueError("A screened universe needs at least one country")
+        if universe.min_market_cap is None:
+            raise ValueError("A screened universe needs a minimum market cap, to bound the search")
+        return self._data_provider.screen(
+            countries=list(universe.countries),
+            sectors=list(universe.sectors) or None,
+            min_market_cap=universe.min_market_cap,
+            currency=self._currency.value,
+        )
 
     def get_constituents(self, date: str | None = None) -> list[Constituent]:
         """

@@ -4985,4 +4985,4 @@ openbb = ["openbb"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "7ea515224c97d193065b37deb1bc2d9644fc0f9cee9298825bd1dcb553e7c1ae"
+content-hash = "6ca3f21a12c4fb840508b8590138d108c263520a2e26b0ab6ac2831936834095"

@@ -1,0 +1,26 @@
+# A rules-only index: no ticker list. The data source is screened for companies
+# listed in Germany, and the rules below decide which ones qualify.
+# Build with:  indexforge build examples/specs/german_tech_screen.yaml
+spec_version: 1
+name: German Technology and Industrial Leaders
+identifier: DETECHIND
+currency: EUR
+base_date: "2025-01-01"
+base_value: 1000
+
+universe:
+  screen: true
+  countries: [Germany]
+  sectors: [Technology, Industrials]
+  min_market_cap: 1000000000
+
+selection:
+  rank_by: MARKET_CAP
+  top: 20
+
+weighting:
+  method: market_cap
+  max_weight: 0.10
+
+rebalancing:
+  frequency: quarterly

@@ -1,6 +1,6 @@
 [project]
 name = "indexforge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Build rules-based financial indices from a spec file, in Python or from the command line"
 authors = [{name = "Reuben Capio", email = "reuben@indexmaker.io"}]
 license = "AGPL-3.0-or-later"
@@ -32,7 +32,7 @@ classifiers = [
 dependencies = [
     "pandas>=2.0,<3",
     "numpy>=1.24,<3",
-    "yfinance>=0.2.35,<2",
+    "yfinance>=0.2.58,<2",
     "pyyaml>=6.0,<7",
 ]
 

@@ -19,6 +19,18 @@ from indexforge.data.connectors.base import DataConnector
 SNAPSHOT_VERSION = 1
 
 
+def _screen_request(
+    countries: list[str], sectors: list[str] | None, min_market_cap: float | None, currency: str
+) -> dict[str, Any]:
+    """The inputs of a screen in a canonical form, for comparing two requests."""
+    return {
+        "countries": sorted(countries),
+        "sectors": sorted(sectors or []),
+        "min_market_cap": float(min_market_cap) if min_market_cap is not None else None,
+        "currency": currency,
+    }
+
+
 class RecordingConnector(DataConnector):
     """
     Wraps another connector and keeps a copy of everything it returned.
@@ -34,6 +46,7 @@ class RecordingConnector(DataConnector):
         self._constituents: dict[str, dict[str, Any]] = {}
         self._fx: dict[str, float] = {}
         self._as_of: str | None = None
+        self._screen: dict[str, Any] | None = None
         self.PROVIDES = inner.PROVIDES  # type: ignore[misc]
 
     def get_prices(self, tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
@@ -58,18 +71,35 @@ class RecordingConnector(DataConnector):
             self._fx[f"{base}/{quote}"] = rate
         return rate
 
+    def screen(
+        self,
+        countries: list[str],
+        sectors: list[str] | None = None,
+        min_market_cap: float | None = None,
+        currency: str = "USD",
+    ) -> list[str]:
+        tickers = self._inner.screen(countries, sectors, min_market_cap, currency)
+        self._screen = {
+            "request": _screen_request(countries, sectors, min_market_cap, currency),
+            "tickers": list(tickers),
+        }
+        return tickers
+
     def get_name(self) -> str:
         return self._inner.get_name()
 
     def snapshot(self) -> dict[str, Any]:
         """Everything recorded so far, in the format SnapshotConnector reads."""
-        return {
+        snapshot: dict[str, Any] = {
             "snapshot_version": SNAPSHOT_VERSION,
             "source": self._inner.get_name(),
             "as_of": self._as_of,
             "fx_rates": dict(sorted(self._fx.items())),
             "constituents": [self._constituents[t] for t in sorted(self._constituents)],
         }
+        if self._screen is not None:
+            snapshot["screen"] = self._screen
+        return snapshot
 
     def save(self, path: str | Path) -> None:
         """Write the snapshot to a JSON file."""
@@ -126,6 +156,26 @@ class SnapshotConnector(DataConnector):
         if base == quote:
             return 1.0
         return self._fx.get(f"{base}/{quote}")
+
+    def screen(
+        self,
+        countries: list[str],
+        sectors: list[str] | None = None,
+        min_market_cap: float | None = None,
+        currency: str = "USD",
+    ) -> list[str]:
+        recorded = self._snapshot.get("screen")
+        if recorded is None:
+            raise ValueError(
+                "This snapshot holds no screen: it was recorded for a universe with listed tickers"
+            )
+        # The candidate list is only valid for the rules it was produced by.
+        if recorded.get("request") != _screen_request(countries, sectors, min_market_cap, currency):
+            raise ValueError(
+                "This snapshot was recorded for different universe rules "
+                "(countries, sectors, minimum market cap or currency). Build without --data."
+            )
+        return list(recorded["tickers"])
 
     def get_name(self) -> str:
         return f"Snapshot ({self._snapshot.get('source', 'unknown source')})"

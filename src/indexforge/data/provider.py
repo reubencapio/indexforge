@@ -140,6 +140,17 @@ class DataProvider:
         """Exchange rate from `base` to `quote`, or None if the source has none."""
         return self.get_connector(source).get_fx_rate(base, quote, as_of_date)
 
+    def screen(
+        self,
+        countries: list[str],
+        sectors: list[str] | None = None,
+        min_market_cap: float | None = None,
+        currency: str = "USD",
+        source: str | None = None,
+    ) -> list[str]:
+        """Find candidate tickers by rule. See DataConnector.screen."""
+        return self.get_connector(source).screen(countries, sectors, min_market_cap, currency)
+
     def get_market_cap(
         self, tickers: list[str], as_of_date: str | None = None, source: str | None = None
     ) -> dict[str, float]:
