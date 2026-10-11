@@ -108,6 +108,8 @@ class BuildResult:
     exclusions: dict[str, str] = field(default_factory=dict)
     #: Tickers whose market cap could not be converted to the index currency.
     unconverted: dict[str, str] = field(default_factory=dict)
+    #: Universe countries the data source has no exchange for, so did not search.
+    unscreened: list[str] = field(default_factory=list)
     #: The exact market data used, replayable with SnapshotConnector.
     snapshot: dict[str, Any] = field(default_factory=dict)
 
@@ -134,6 +136,7 @@ class BuildResult:
             ],
             "exclusions": dict(sorted(self.exclusions.items())),
             "unconverted": dict(sorted(self.unconverted.items())),
+            "unscreened": sorted(self.unscreened),
         }
 
 
@@ -425,6 +428,7 @@ def build(
         data_source=connector.get_name(),
         exclusions=index.exclusions,
         unconverted=index.unconverted,
+        unscreened=index.unscreened,
         snapshot=recorder.snapshot(),
     )
 

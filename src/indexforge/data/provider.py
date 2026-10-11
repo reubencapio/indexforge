@@ -151,6 +151,10 @@ class DataProvider:
         """Find candidate tickers by rule. See DataConnector.screen."""
         return self.get_connector(source).screen(countries, sectors, min_market_cap, currency)
 
+    def unscreenable_countries(self, countries: list[str], source: str | None = None) -> list[str]:
+        """Countries a screen would not search. See DataConnector."""
+        return self.get_connector(source).unscreenable_countries(countries)
+
     def get_market_cap(
         self, tickers: list[str], as_of_date: str | None = None, source: str | None = None
     ) -> dict[str, float]:

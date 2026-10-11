@@ -236,6 +236,12 @@ def _render(result: BuildResult, fmt: str) -> str:
     if data["unconverted"]:
         lines += ["", f"* Market cap not converted to {data['currency']} (no exchange rate):"]
         lines += [f"  {t} is in {c}" for t, c in data["unconverted"].items()]
+    if data["unscreened"]:
+        lines += [
+            "",
+            f"Not searched ({data['data_source']} covers no exchange there): "
+            + ", ".join(data["unscreened"]),
+        ]
     exclusions = data["exclusions"]
     if len(exclusions) > MAX_LISTED_EXCLUSIONS:
         # A screen considers hundreds of companies; list the reasons, not each one.

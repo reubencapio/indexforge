@@ -122,6 +122,20 @@ class TestBuild:
         with pytest.raises(NotImplementedError, match="cannot search for companies"):
             build(spec, as_of=AS_OF, connector=FakeConnector([]))
 
+    def test_unsearched_countries_are_reported_and_survive_replay(self, spec, market):
+        market.unscreenable_countries = lambda countries: [
+            c for c in countries if c == "Luxembourg"
+        ]
+        spec["universe"]["countries"] = ["Germany", "Luxembourg"]
+
+        live = build(spec, as_of=AS_OF, connector=market)
+        assert live.unscreened == ["Luxembourg"]
+        assert live.to_dict()["unscreened"] == ["Luxembourg"]
+
+        replayed = build(spec, as_of=AS_OF, connector=SnapshotConnector(live.snapshot))
+        assert replayed.unscreened == ["Luxembourg"]
+        assert replayed.to_dict() == {**live.to_dict(), "data_source": replayed.data_source}
+
     def test_empty_screen_gives_an_empty_index(self, spec):
         result = build(spec, as_of=AS_OF, connector=ScreeningConnector([]))
         assert result.constituents == []
@@ -209,10 +223,17 @@ class TestYahooScreen:
             ["gt", "intradaymarketcap", 500_000_000.0],
         ]
 
-    def test_unsupported_country_is_rejected(self, yahoo):
+    def test_country_without_an_exchange_is_skipped_not_fatal(self, yahoo):
+        connector, calls = yahoo
+        assert connector.screen(["Germany", "Luxembourg"]) == ["AAA2.DE", "BBB.DE"]
+        assert connector.unscreenable_countries(["Germany", "Luxembourg"]) == ["Luxembourg"]
+        # Only Germany was actually queried.
+        assert [c["query"][1] for c in calls] == [["eq", "region", "de"]]
+
+    def test_screen_with_no_searchable_country_fails_clearly(self, yahoo):
         connector, _ = yahoo
-        with pytest.raises(ValueError, match="Atlantis"):
-            connector.screen(["Atlantis"])
+        with pytest.raises(ValueError, match="covers no exchange in: Luxembourg"):
+            connector.screen(["Luxembourg"])
 
     def test_unknown_sector_is_rejected(self, yahoo):
         connector, _ = yahoo
