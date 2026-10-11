@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-11
+
+### Added
+
+- **Screened universes.** `universe.screen: true` finds the candidates by
+  asking the data source which companies are listed in the universe's
+  countries, so a spec can be rules only, with no ticker list. Also available
+  as `Universe.builder().screened()` and `DataConnector.screen`.
+- The Yahoo connector implements screening. The screen's result is recorded in
+  the data snapshot, so a screened build replays exactly like any other.
+- The table output summarises exclusions by reason when there are more than 25.
+
+### Changed
+
+- The Yahoo connector fetches company details concurrently and takes the price
+  from the quote, which makes large builds several times faster.
+- Requires `yfinance` 0.2.58 or newer, for its screener.
+
+### Fixed
+
+- The OpenBB connector labelled every market cap as US dollars.
+
 ## [0.2.0] - 2026-10-11
 
 First release from this repository. The library previously lived inside the

@@ -25,6 +25,9 @@ from indexforge.data.connectors.base import DataConnector
 from indexforge.data.connectors.snapshot import SnapshotConnector
 from indexforge.spec import BuildResult, SpecError, build, load_spec
 
+#: Above this many, the table summarises exclusions by reason.
+MAX_LISTED_EXCLUSIONS = 25
+
 EXAMPLE_SPEC = """\
 # An index, described as data. Build it with:  indexforge build <this file>
 spec_version: 1
@@ -70,7 +73,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except SpecError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    except (OSError, ValueError) as e:
+    except (OSError, ValueError, NotImplementedError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
 
@@ -136,7 +139,13 @@ def _init(args: argparse.Namespace) -> int:
 
 def _validate(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
-    print(f"{args.spec} is valid: {spec['name']} ({len(spec['universe']['tickers'])} candidates)")
+    universe = spec["universe"]
+    candidates = (
+        f"screens {len(universe['countries'])} countries"
+        if universe.get("screen")
+        else f"{len(universe['tickers'])} candidates"
+    )
+    print(f"{args.spec} is valid: {spec['name']} ({candidates})")
     return 0
 
 
@@ -227,9 +236,20 @@ def _render(result: BuildResult, fmt: str) -> str:
     if data["unconverted"]:
         lines += ["", f"* Market cap not converted to {data['currency']} (no exchange rate):"]
         lines += [f"  {t} is in {c}" for t, c in data["unconverted"].items()]
-    if data["exclusions"]:
+    exclusions = data["exclusions"]
+    if len(exclusions) > MAX_LISTED_EXCLUSIONS:
+        # A screen considers hundreds of companies; list the reasons, not each one.
+        counts: dict[str, int] = {}
+        for reason in exclusions.values():
+            counts[reason] = counts.get(reason, 0) + 1
+        lines += ["", f"Left out: {len(exclusions)} candidates (use --format json for each one)"]
+        lines += [
+            f"  {count:>5}  {reason}"
+            for reason, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        ]
+    elif exclusions:
         lines += ["", "Left out:"]
-        lines += [f"  {t}: {reason}" for t, reason in data["exclusions"].items()]
+        lines += [f"  {t}: {reason}" for t, reason in exclusions.items()]
     return "\n".join(lines) + "\n"
 
 

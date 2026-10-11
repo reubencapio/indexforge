@@ -68,6 +68,10 @@ class Universe:
     # Specific tickers (for static universe)
     tickers: list[str] = field(default_factory=list)
 
+    # Find candidates by asking the data source which companies are listed in
+    # `countries`, instead of from `tickers`.
+    screen: bool = False
+
     # Size and liquidity filters
     min_market_cap: float | None = None
     max_market_cap: float | None = None
@@ -241,6 +245,7 @@ class Universe:
             "sectors": self.sectors,
             "exclude_sectors": self.exclude_sectors,
             "tickers": self.tickers,
+            "screen": self.screen,
             "min_market_cap": self.min_market_cap,
             "max_market_cap": self.max_market_cap,
             "min_average_daily_volume": self.min_average_daily_volume,
@@ -274,6 +279,7 @@ class UniverseBuilder:
         self._industries: list[str] = []
         self._exchanges: list[str] = []
         self._tickers: list[str] = []
+        self._screen: bool = False
         self._min_market_cap: float | None = None
         self._max_market_cap: float | None = None
         self._min_average_daily_volume: float | None = None
@@ -359,6 +365,23 @@ class UniverseBuilder:
         self._tickers = tickers
         return self
 
+    def screened(self) -> "UniverseBuilder":
+        """
+        Find candidates by screening the data source rather than from a list.
+
+        Requires `countries` and `min_market_cap`, which bound the search.
+
+        Example:
+            >>> universe = (Universe.builder()
+            ...     .screened()
+            ...     .countries([Country.GERMANY])
+            ...     .min_market_cap(1_000_000_000)
+            ...     .build()
+            ... )
+        """
+        self._screen = True
+        return self
+
     def min_market_cap(self, amount: float, currency: Currency | None = None) -> "UniverseBuilder":
         """Set minimum market capitalization."""
         self._min_market_cap = amount
@@ -427,6 +450,7 @@ class UniverseBuilder:
             industries=self._industries,
             exchanges=self._exchanges,
             tickers=self._tickers,
+            screen=self._screen,
             min_market_cap=self._min_market_cap,
             max_market_cap=self._max_market_cap,
             min_average_daily_volume=self._min_average_daily_volume,

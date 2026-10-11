@@ -206,6 +206,37 @@ class DataConnector(ABC):
         """
         return 1.0 if base == quote else None
 
+    def screen(
+        self,
+        countries: list[str],
+        sectors: list[str] | None = None,
+        min_market_cap: float | None = None,
+        currency: str = "USD",
+    ) -> list[str]:
+        """
+        Find candidate tickers by rule instead of from a list.
+
+        A screen is a first pass. Providers match on where a stock is listed,
+        so the result may include foreign companies; the caller fetches each
+        candidate and applies the universe rules to its real attributes.
+
+        Args:
+            countries: Country names whose exchanges to search
+            sectors: Sector names to keep (all if None)
+            min_market_cap: Smallest company to consider, in `currency`
+            currency: ISO code `min_market_cap` is expressed in
+
+        Returns:
+            Tickers in alphabetical order, one per company
+
+        Raises:
+            NotImplementedError: If this connector cannot screen
+        """
+        raise NotImplementedError(
+            f"{self.get_name()} cannot search for companies by rule. "
+            "List the candidate tickers in the universe instead."
+        )
+
     def is_available(self) -> bool:
         """
         Check if the data connector is available and working.

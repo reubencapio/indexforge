@@ -18,6 +18,7 @@ import pandas as pd
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import Currency
 from indexforge.data.connectors.base import DataConnector
+from indexforge.data.fx import parse_currency
 
 logger = logging.getLogger(__name__)
 
@@ -296,7 +297,9 @@ class OpenBBConnector(DataConnector):
                     sector=info.get("sector", "Unknown"),
                     industry=info.get("industry", "Unknown"),
                     country=country,
-                    currency=Currency.USD,
+                    # Market caps come in the trading currency; assuming dollars
+                    # overstated anything quoted in a weaker currency.
+                    currency=parse_currency(info.get("currency")) or Currency.USD,
                     exchange=info.get("exchange", ""),
                     price=price,
                     dividend_yield=info.get("dividend_yield", 0) or 0,

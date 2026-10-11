@@ -77,7 +77,8 @@ rebalancing:
 
 | Section | Setting | Meaning |
 |---|---|---|
-| `universe` | `tickers` | Required. The candidates, as Yahoo Finance symbols. |
+| `universe` | `tickers` | The candidates, as Yahoo Finance symbols. Required unless `screen` is true. |
+| | `screen` | `true` to find candidates by rule instead. Needs `countries` and `min_market_cap`. |
 | | `countries`, `exclude_countries` | Keep or drop by country of domicile. |
 | | `sectors`, `exclude_sectors` | Keep or drop by sector. GICS and Yahoo names both work. |
 | | `min_market_cap`, `max_market_cap` | Size limits, in the index currency. |
@@ -89,6 +90,35 @@ rebalancing:
 | | `min_dividend_yield` | Minimum dividend yield, as a fraction. |
 | `weighting` | `method`, `max_weight` | Weighting scheme and an optional cap per member. |
 | `rebalancing` | `frequency` | How often the index is reviewed. |
+
+### Letting the rules find the companies
+
+Instead of listing tickers, a universe can be screened: the data source is
+asked which companies are listed in the given countries, and the rules decide
+the rest.
+
+```yaml
+universe:
+  screen: true
+  countries: [Germany, France, Netherlands]   # required for a screen
+  sectors: [Technology, Industrials]
+  min_market_cap: 500000000                   # required: it bounds the search
+selection:
+  rank_by: MARKET_CAP
+  top: 20
+```
+
+A screen considers every company listed on those countries' exchanges, fetches
+its details, and keeps the ones actually based there. Expect a few hundred
+candidates and a run time of tens of seconds. Two things to know:
+
+- Companies are found through their home exchanges. One based in the
+  Netherlands but listed only in New York is not found by a Netherlands screen.
+- A theme is whatever the keywords match. `theme_keywords: [quantum]` keeps
+  every company whose description contains the word, which is repeatable but
+  blunt. Read the result before relying on it.
+
+Screening needs a data source that supports it. Yahoo Finance does.
 
 A setting the tool does not recognise is an error. A misspelt rule that is
 quietly ignored would give you an index that is not the one you described.
@@ -108,8 +138,9 @@ indexforge build my_index.yaml --save-data my_index.data.json
 indexforge build my_index.yaml --data my_index.data.json
 ```
 
-The data file holds the figures as the source reported them, plus the exchange
-rates used, so the result can be checked as well as repeated.
+The data file holds the figures as the source reported them, the exchange
+rates used and, for a screened universe, the list of candidates the screen
+returned, so the result can be checked as well as repeated.
 
 Without a data file, a build is repeatable to the extent the data source is:
 Yahoo Finance reports current market caps only, so `--as-of` fixes the exchange
@@ -218,8 +249,9 @@ OpenBB is available as an optional source: `pip install "indexforge[openbb]"`.
 
 ## What it does not do
 
-- **It does not discover companies.** You supply the candidates. That is what
-  makes the result repeatable.
+- **It does not judge what a company does.** A screen applies the rules you
+  give it to the data it gets; it has no opinion on whether a company "really"
+  belongs to a theme.
 - **It does not give historical market caps** with the default data source, so
   it cannot rebuild what an index would have held on a past date.
 - **It is not investment advice**, and Yahoo Finance data is unofficial and can

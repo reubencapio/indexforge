@@ -5,6 +5,8 @@ A free data connector using the yfinance library.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import pandas as pd
 
@@ -12,8 +14,25 @@ from indexforge.core.constituent import Constituent
 from indexforge.core.types import Currency
 from indexforge.data.connectors.base import DataConnector
 from indexforge.data.fx import parse_currency
+from indexforge.data.screening import (
+    PRIMARY_EXCHANGES,
+    REGION_CURRENCY,
+    YAHOO_REGIONS,
+    yahoo_sector,
+)
 
 logger = logging.getLogger(__name__)
+
+#: Yahoo's largest page, and a ceiling on one screen so a loose rule cannot
+#: turn into tens of thousands of follow-up requests.
+SCREEN_PAGE_SIZE = 250
+SCREEN_MAX_RESULTS = 5000
+
+
+def _any_of(query_cls: Any, field: str, values: list[str]) -> Any:
+    """A query matching any of `values`; Yahoo rejects an "or" with one operand."""
+    terms = [query_cls("eq", [field, value]) for value in values]
+    return terms[0] if len(terms) == 1 else query_cls("or", terms)
 
 
 class YahooFinanceConnector(DataConnector):
@@ -59,14 +78,16 @@ class YahooFinanceConnector(DataConnector):
         }
     )
 
-    def __init__(self, cache_enabled: bool = True) -> None:
+    def __init__(self, cache_enabled: bool = True, max_workers: int = 8) -> None:
         """
         Initialize Yahoo Finance connector.
 
         Args:
             cache_enabled: Whether to cache data locally (reduces API calls)
+            max_workers: How many tickers to fetch at once
         """
         self._cache_enabled = cache_enabled
+        self._max_workers = max(1, max_workers)
         self._price_cache: dict[str, pd.DataFrame] = {}
         self._info_cache: dict[str, dict] = {}
         self._fx_cache: dict[str, float] = {}
@@ -139,49 +160,145 @@ class YahooFinanceConnector(DataConnector):
         Returns:
             List of Constituent objects
         """
+        self._get_yfinance()
+        if not tickers:
+            return []
+
+        # One request per ticker, so they are made concurrently. `map` returns
+        # results in input order, which keeps the output order deterministic.
+        with ThreadPoolExecutor(max_workers=min(self._max_workers, len(tickers))) as pool:
+            return list(pool.map(self._fetch_constituent, tickers))
+
+    def _fetch_constituent(self, ticker: str) -> Constituent:
+        """Fetch one constituent. Never raises: a failure yields a bare record."""
         yf = self._get_yfinance()
-        constituents = []
+        try:
+            stock = yf.Ticker(ticker)
+            info = self._get_stock_info(stock, ticker)
 
-        for ticker in tickers:
-            try:
-                stock = yf.Ticker(ticker)
-                info = self._get_stock_info(stock, ticker)
+            constituent = Constituent(
+                ticker=ticker,
+                name=info.get("longName", info.get("shortName", ticker)),
+                market_cap=info.get("marketCap", 0) or 0,
+                sector=info.get("sector", "Unknown"),
+                industry=info.get("industry", "Unknown"),
+                country=info.get("country", "Unknown"),
+                currency=self._currency(info.get("currency"), ticker),
+                exchange=info.get("exchange", ""),
+                dividend_yield=info.get("dividendYield", 0) or 0,
+                pe_ratio=info.get("trailingPE"),
+                pb_ratio=info.get("priceToBook"),
+                average_daily_volume=info.get("averageVolume", 0) or 0,
+                free_float_factor=self._calculate_free_float(info),
+                business_description=info.get("longBusinessSummary", "") or "",
+            )
 
-                constituent = Constituent(
-                    ticker=ticker,
-                    name=info.get("longName", info.get("shortName", ticker)),
-                    market_cap=info.get("marketCap", 0) or 0,
-                    sector=info.get("sector", "Unknown"),
-                    industry=info.get("industry", "Unknown"),
-                    country=info.get("country", "Unknown"),
-                    currency=self._currency(info.get("currency"), ticker),
-                    exchange=info.get("exchange", ""),
-                    dividend_yield=info.get("dividendYield", 0) or 0,
-                    pe_ratio=info.get("trailingPE"),
-                    pb_ratio=info.get("priceToBook"),
-                    average_daily_volume=info.get("averageVolume", 0) or 0,
-                    free_float_factor=self._calculate_free_float(info),
-                    business_description=info.get("longBusinessSummary", "") or "",
-                )
+            # Calculate free float market cap
+            constituent.free_float_market_cap = (
+                constituent.market_cap * constituent.free_float_factor
+            )
 
-                # Calculate free float market cap
-                constituent.free_float_market_cap = (
-                    constituent.market_cap * constituent.free_float_factor
-                )
-
-                # Get current price
+            # The quote already carries the price; only fall back to a second
+            # request when it does not.
+            price = info.get("currentPrice") or info.get("regularMarketPrice")
+            if not price:
                 hist = stock.history(period="1d")
                 if not hist.empty:
-                    constituent.price = hist["Close"].iloc[-1]
+                    price = hist["Close"].iloc[-1]
+            if price:
+                constituent.price = float(price)
 
-                constituents.append(constituent)
+            return constituent
 
-            except Exception as e:
-                logger.warning(f"Error fetching data for {ticker}: {e}")
-                # Create minimal constituent
-                constituents.append(Constituent(ticker=ticker, name=ticker))
+        except Exception as e:
+            logger.warning(f"Error fetching data for {ticker}: {e}")
+            # Create minimal constituent
+            return Constituent(ticker=ticker, name=ticker)
 
-        return constituents
+    def screen(
+        self,
+        countries: list[str],
+        sectors: list[str] | None = None,
+        min_market_cap: float | None = None,
+        currency: str = "USD",
+    ) -> list[str]:
+        """
+        Find companies listed on the given countries' exchanges.
+
+        Yahoo screens by listing venue, so foreign companies with a local quote
+        come back too; they are removed later by the universe's country rule.
+        Where a company has several lines (share classes, or a quote on more
+        than one venue) only the most traded line is kept.
+
+        The size floor sent to Yahoo is half the requested minimum, converted to
+        the local currency. The exact minimum is applied afterwards on converted
+        figures; the margin keeps a company near the line from being lost to a
+        difference between Yahoo's rate and ours.
+        """
+        yf = self._get_yfinance()
+        from yfinance import EquityQuery
+
+        unknown = sorted(c for c in countries if c not in YAHOO_REGIONS)
+        if unknown:
+            raise ValueError(f"Yahoo Finance cannot screen these countries: {', '.join(unknown)}")
+        if not countries:
+            raise ValueError("Screening needs at least one country")
+
+        yahoo_sectors: list[str] = []
+        for sector in sectors or []:
+            name = yahoo_sector(sector)
+            if name is None:
+                raise ValueError(f"Yahoo Finance has no sector named {sector!r}")
+            if name not in yahoo_sectors:
+                yahoo_sectors.append(name)
+
+        best: dict[str, tuple[float, str]] = {}  # company name -> (volume, ticker)
+        for country in countries:
+            region = YAHOO_REGIONS[country]
+            clauses = [EquityQuery("eq", ["region", region])]
+
+            exchanges = PRIMARY_EXCHANGES.get(region)
+            if exchanges:
+                clauses.append(_any_of(EquityQuery, "exchange", exchanges))
+            if yahoo_sectors:
+                clauses.append(_any_of(EquityQuery, "sector", yahoo_sectors))
+            if min_market_cap:
+                local = REGION_CURRENCY.get(region)
+                rate = self.get_fx_rate(currency, local) if local else None
+                if rate:
+                    clauses.append(
+                        EquityQuery("gt", ["intradaymarketcap", min_market_cap * rate * 0.5])
+                    )
+
+            query = clauses[0] if len(clauses) == 1 else EquityQuery("and", clauses)
+            for quote in self._screen_all(yf, query):
+                if quote.get("quoteType") != "EQUITY" or not quote.get("symbol"):
+                    continue
+                ticker = quote["symbol"]
+                name = quote.get("longName") or quote.get("shortName") or ticker
+                volume = float(quote.get("averageDailyVolume3Month") or 0)
+                # Highest volume wins; the ticker breaks ties so the choice is stable.
+                if name not in best or (-volume, ticker) < (-best[name][0], best[name][1]):
+                    best[name] = (volume, ticker)
+
+        return sorted(ticker for _, ticker in best.values())
+
+    def _screen_all(self, yf: Any, query: Any) -> list[dict]:
+        """Every result of a screen, following Yahoo's pagination."""
+        quotes: list[dict] = []
+        while len(quotes) < SCREEN_MAX_RESULTS:
+            page = yf.screen(
+                query,
+                size=SCREEN_PAGE_SIZE,
+                offset=len(quotes),
+                sortField="intradaymarketcap",
+                sortAsc=False,
+            )
+            batch = page.get("quotes") or []
+            quotes.extend(batch)
+            if len(batch) < SCREEN_PAGE_SIZE or len(quotes) >= (page.get("total") or 0):
+                break
+        return quotes
 
     def _currency(self, code: str | None, ticker: str) -> Currency:
         """

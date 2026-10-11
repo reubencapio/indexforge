@@ -56,6 +56,9 @@ from indexforge.weighting.methods import WeightingMethod
 
 SPEC_VERSION = 1
 
+#: Stands in for "keep everything" where the selection needs a count.
+_NO_LIMIT = 1_000_000
+
 _TOP_LEVEL = {
     "spec_version",
     "name",
@@ -71,6 +74,7 @@ _TOP_LEVEL = {
 }
 _UNIVERSE = {
     "tickers",
+    "screen",
     "countries",
     "exclude_countries",
     "sectors",
@@ -197,19 +201,39 @@ def validate_spec(data: Any) -> dict[str, Any]:
 
     universe = _section(data, "universe", _UNIVERSE)
     tickers = universe.get("tickers")
-    if not isinstance(tickers, list) or not tickers:
+    screen = universe.get("screen", False)
+    if not isinstance(screen, bool):
+        raise SpecError("'universe.screen' must be true or false")
+    if screen and tickers:
         raise SpecError(
-            "'universe.tickers' is required: list every candidate ticker, so that the "
-            "result does not depend on who runs the spec"
+            "Use either 'universe.tickers' or 'universe.screen: true', not both: "
+            "a screen finds the candidates itself"
         )
-    if not all(isinstance(t, str) and t.strip() for t in tickers):
-        raise SpecError("'universe.tickers' must be a list of ticker symbols")
-    tickers = [t.strip().upper() for t in tickers]
-    duplicates = sorted({t for t in tickers if tickers.count(t) > 1})
-    if duplicates:
-        raise SpecError(f"'universe.tickers' lists {', '.join(duplicates)} more than once")
 
-    clean_universe: dict[str, Any] = {"tickers": tickers}
+    clean_universe: dict[str, Any]
+    if screen:
+        if not universe.get("countries"):
+            raise SpecError("'universe.countries' is required when 'universe.screen' is true")
+        if universe.get("min_market_cap") is None:
+            raise SpecError(
+                "'universe.min_market_cap' is required when 'universe.screen' is true, "
+                "to bound the search"
+            )
+        clean_universe = {"screen": True}
+    else:
+        if not isinstance(tickers, list) or not tickers:
+            raise SpecError(
+                "'universe.tickers' is required: list every candidate ticker, or set "
+                "'universe.screen: true' with countries and a minimum market cap"
+            )
+        if not all(isinstance(t, str) and t.strip() for t in tickers):
+            raise SpecError("'universe.tickers' must be a list of ticker symbols")
+        tickers = [t.strip().upper() for t in tickers]
+        duplicates = sorted({t for t in tickers if tickers.count(t) > 1})
+        if duplicates:
+            raise SpecError(f"'universe.tickers' lists {', '.join(duplicates)} more than once")
+        clean_universe = {"tickers": tickers}
+
     for key in ("countries", "exclude_countries"):
         if universe.get(key):
             clean_universe[key] = [
@@ -299,7 +323,11 @@ def index_from_spec(spec: dict[str, Any]) -> Index:
     )
 
     rules = spec["universe"]
-    universe = Universe.builder().tickers(rules["tickers"]).currency(Currency(spec["currency"]))
+    universe = Universe.builder().currency(Currency(spec["currency"]))
+    if rules.get("screen"):
+        universe.screened()
+    else:
+        universe.tickers(rules["tickers"])
     if rules.get("countries"):
         universe.countries(rules["countries"])
     if rules.get("exclude_countries"):
@@ -323,7 +351,7 @@ def index_from_spec(spec: dict[str, Any]) -> Index:
         criteria = SelectionCriteria.builder()
         criteria.ranking_by(Factor(selection.get("rank_by", Factor.MARKET_CAP.value)))
         # With no `top`, every candidate that passes the filters is kept.
-        criteria.select_top(selection.get("top", len(rules["tickers"])))
+        criteria.select_top(selection.get("top", _NO_LIMIT))
         if selection.get("theme_keywords"):
             criteria.theme_filter(selection["theme_keywords"], selection.get("theme_match", "any"))
         if selection.get("min_dividend_yield") is not None:
