@@ -123,6 +123,10 @@ class SelectionCriteria:
 
         return selected
 
+    def passes_filters(self, constituent: Constituent) -> bool:
+        """Whether a constituent passes every filter, before any ranking."""
+        return all(filter_fn(constituent) for filter_fn in self.custom_filters)
+
     def _rank(self, constituents: list[Constituent]) -> list[tuple[Constituent, float]]:
         """Rank constituents by the specified criteria."""
         if self.composite_score:

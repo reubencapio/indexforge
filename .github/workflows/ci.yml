@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint, format and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Poetry
+        run: pipx install poetry==2.1.1
+      - name: Install dependencies
+        run: poetry install --no-interaction
+      - name: Black
+        run: poetry run black --check --diff src tests examples
+      - name: Ruff
+        run: poetry run ruff check src tests examples
+      - name: Mypy
+        run: poetry run mypy src/indexforge
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: pipx install poetry==2.1.1
+      - name: Install dependencies
+        run: poetry install --no-interaction
+      - name: Run tests
+        run: poetry run pytest --cov=indexforge --cov-report=term-missing
+
+  package:
+    name: Build and install the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build
+        run: pipx run build
+      - name: Install the wheel into a clean environment
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install dist/*.whl
+      # Outside the checkout, so the installed package is what gets imported.
+      - name: Run the command line tool
+        working-directory: /tmp
+        run: |
+          /tmp/clean/bin/indexforge --version
+          /tmp/clean/bin/indexforge init smoke.yaml
+          /tmp/clean/bin/indexforge validate smoke.yaml

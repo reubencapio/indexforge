@@ -1,6 +1,7 @@
 """Data connectors for various data sources."""
 
 from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.snapshot import RecordingConnector, SnapshotConnector
 from indexforge.data.connectors.yahoo import YahooFinanceConnector
 
 # Optional connectors (may require additional dependencies)
@@ -12,5 +13,7 @@ except ImportError:
 __all__ = [
     "DataConnector",
     "YahooFinanceConnector",
+    "RecordingConnector",
+    "SnapshotConnector",
     "OpenBBConnector",
 ]

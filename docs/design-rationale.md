@@ -514,7 +514,7 @@ idx.calc()
 
 #### ✅ Our API Design
 ```python
-from indexmaker import (
+from indexforge import (
     Index, Currency, Universe, AssetClass, Region,
     SelectionCriteria, Factor, WeightingMethod
 )

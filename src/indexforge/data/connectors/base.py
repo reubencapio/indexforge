@@ -187,6 +187,25 @@ class DataConnector(ABC):
         # Default: empty descriptions
         return {ticker: "" for ticker in tickers}
 
+    def get_fx_rate(self, base: str, quote: str, as_of_date: str | None = None) -> float | None:
+        """
+        Exchange rate: how many units of `quote` one unit of `base` buys.
+
+        Used to bring market caps quoted in different currencies onto one scale
+        before they are compared. The default knows only that a currency converts
+        to itself; a connector with no FX data returns None for everything else,
+        and the caller reports the figure as unconverted rather than guessing.
+
+        Args:
+            base: ISO code of the currency being converted from
+            quote: ISO code of the currency being converted to
+            as_of_date: Date for the rate (latest if None)
+
+        Returns:
+            The rate, or None if this connector cannot supply it
+        """
+        return 1.0 if base == quote else None
+
     def is_available(self) -> bool:
         """
         Check if the data connector is available and working.

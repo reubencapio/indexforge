@@ -56,6 +56,9 @@ class Constituent:
     industry: str = ""
     country: str = ""
     currency: Currency = Currency.USD
+    # Currency the market cap is stated in, once it differs from the trading
+    # currency above (after conversion to an index currency). None means "same".
+    market_cap_currency: Currency | None = None
     isin: str | None = None
     sedol: str | None = None
     exchange: str = ""
@@ -113,12 +116,20 @@ class Constituent:
             "shares": self.shares,
             "price": self.price,
             "market_cap": self.market_cap,
+            "free_float_market_cap": self.free_float_market_cap,
+            "free_float_factor": self.free_float_factor,
             "sector": self.sector,
             "industry": self.industry,
             "country": self.country,
             "currency": str(self.currency),
+            "market_cap_currency": str(self.market_cap_currency or self.currency),
+            "exchange": self.exchange,
             "dividend_yield": self.dividend_yield,
+            "pe_ratio": self.pe_ratio,
+            "pb_ratio": self.pb_ratio,
+            "esg_score": self.esg_score,
             "average_daily_volume": self.average_daily_volume,
+            "business_description": self.business_description,
         }
 
     @classmethod
@@ -135,10 +146,20 @@ class Constituent:
             shares=data.get("shares", 0.0),
             price=data.get("price", 0.0),
             market_cap=data.get("market_cap", 0.0),
+            free_float_market_cap=data.get("free_float_market_cap", 0.0),
+            free_float_factor=data.get("free_float_factor", 1.0),
             sector=data.get("sector", ""),
             industry=data.get("industry", ""),
             country=data.get("country", ""),
             currency=currency,
+            market_cap_currency=(
+                Currency(data["market_cap_currency"]) if data.get("market_cap_currency") else None
+            ),
+            exchange=data.get("exchange", ""),
             dividend_yield=data.get("dividend_yield", 0.0),
+            pe_ratio=data.get("pe_ratio"),
+            pb_ratio=data.get("pb_ratio"),
+            esg_score=data.get("esg_score"),
             average_daily_volume=data.get("average_daily_volume", 0.0),
+            business_description=data.get("business_description", ""),
         )

@@ -46,11 +46,13 @@ from indexforge.core.types import (
 )
 from indexforge.core.universe import Universe, UniverseBuilder
 from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.snapshot import RecordingConnector, SnapshotConnector
 from indexforge.data.connectors.yahoo import YahooFinanceConnector
 from indexforge.data.provider import DataProvider, DataProviderBuilder
 from indexforge.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
 from indexforge.selection.composite import CompositeScore, CompositeScoreBuilder
 from indexforge.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
+from indexforge.spec import BuildResult, SpecError, build, index_from_spec, load_spec
 from indexforge.validation.report import ValidationReport
 from indexforge.validation.rules import ValidationRules, ValidationRulesBuilder
 from indexforge.weighting.methods import WeightingMethod, WeightingMethodBuilder
@@ -62,7 +64,7 @@ except ImportError:
     IndexAI = None  # type: ignore
     IndexAIConfig = None  # type: ignore
 
-__version__ = "0.1.5"
+__version__ = "0.2.0"
 
 __all__ = [
     # Core
@@ -95,6 +97,14 @@ __all__ = [
     "DataProviderBuilder",
     "DataConnector",
     "YahooFinanceConnector",
+    "RecordingConnector",
+    "SnapshotConnector",
+    # Specs
+    "build",
+    "load_spec",
+    "index_from_spec",
+    "BuildResult",
+    "SpecError",
     # Validation
     "ValidationRules",
     "ValidationRulesBuilder",

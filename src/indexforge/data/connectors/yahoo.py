@@ -11,6 +11,7 @@ import pandas as pd
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import Currency
 from indexforge.data.connectors.base import DataConnector
+from indexforge.data.fx import parse_currency
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class YahooFinanceConnector(DataConnector):
         self._cache_enabled = cache_enabled
         self._price_cache: dict[str, pd.DataFrame] = {}
         self._info_cache: dict[str, dict] = {}
+        self._fx_cache: dict[str, float] = {}
         self._yf = None
 
     def _get_yfinance(self):
@@ -152,11 +154,7 @@ class YahooFinanceConnector(DataConnector):
                     sector=info.get("sector", "Unknown"),
                     industry=info.get("industry", "Unknown"),
                     country=info.get("country", "Unknown"),
-                    currency=(
-                        Currency(info.get("currency", "USD"))
-                        if info.get("currency") in [c.value for c in Currency]
-                        else Currency.USD
-                    ),
+                    currency=self._currency(info.get("currency"), ticker),
                     exchange=info.get("exchange", ""),
                     dividend_yield=info.get("dividendYield", 0) or 0,
                     pe_ratio=info.get("trailingPE"),
@@ -184,6 +182,56 @@ class YahooFinanceConnector(DataConnector):
                 constituents.append(Constituent(ticker=ticker, name=ticker))
 
         return constituents
+
+    def _currency(self, code: str | None, ticker: str) -> Currency:
+        """
+        Currency a ticker's market cap is quoted in.
+
+        Yahoo reports some exchanges in minor units ("GBp" for London, "ZAc" for
+        Johannesburg, "ILA" for Tel Aviv). That applies to the share price; the
+        market cap is in whole units, so the minor code maps to its parent.
+        """
+        iso = parse_currency(code)
+        if iso is None:
+            if code:
+                logger.warning(
+                    "Unsupported currency %r for %s; its market cap is treated as USD", code, ticker
+                )
+            return Currency.USD
+        return iso
+
+    def get_fx_rate(self, base: str, quote: str, as_of_date: str | None = None) -> float | None:
+        """
+        Exchange rate from Yahoo's currency pairs.
+
+        With a date, the last close on or before that date is used, so a build
+        for a past date does not move when rerun later.
+        """
+        if base == quote:
+            return 1.0
+
+        key = f"{base}{quote}@{as_of_date or 'latest'}"
+        if key in self._fx_cache:
+            return self._fx_cache[key]
+
+        yf = self._get_yfinance()
+        rate: float | None = None
+        try:
+            pair = yf.Ticker(f"{base}{quote}=X")
+            if as_of_date:
+                end = pd.Timestamp(as_of_date) + pd.Timedelta(days=1)
+                hist = pair.history(start=end - pd.Timedelta(days=10), end=end)
+            else:
+                hist = pair.history(period="5d")
+            if not hist.empty:
+                rate = float(hist["Close"].dropna().iloc[-1])
+        except Exception as e:
+            logger.warning(f"Error fetching FX rate {base}/{quote}: {e}")
+
+        if rate is not None and rate > 0:
+            self._fx_cache[key] = rate
+            return rate
+        return None
 
     def _get_stock_info(self, stock, ticker: str) -> dict:
         """Get stock info with caching."""
@@ -411,3 +459,4 @@ class YahooFinanceConnector(DataConnector):
         """Clear the data cache."""
         self._price_cache.clear()
         self._info_cache.clear()
+        self._fx_cache.clear()

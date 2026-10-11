@@ -24,6 +24,25 @@ class Currency(str, Enum):
     INR = "INR"
     BRL = "BRL"
     MXN = "MXN"
+    SEK = "SEK"
+    NOK = "NOK"
+    DKK = "DKK"
+    PLN = "PLN"
+    CZK = "CZK"
+    HUF = "HUF"
+    TRY = "TRY"
+    NZD = "NZD"
+    TWD = "TWD"
+    ZAR = "ZAR"
+    ILS = "ILS"
+    SAR = "SAR"
+    AED = "AED"
+    IDR = "IDR"
+    MYR = "MYR"
+    THB = "THB"
+    PHP = "PHP"
+    CLP = "CLP"
+    COP = "COP"
 
     def __str__(self) -> str:
         return self.value
@@ -253,6 +272,19 @@ class Sector(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+    @staticmethod
+    def canonical(value: str) -> str:
+        """
+        One comparable name per sector, whichever naming scheme it came in.
+
+        Data providers disagree: GICS says "Health Care" and "Financials" where
+        Yahoo says "Healthcare" and "Financial Services". Without this, a rule
+        written with one set of names silently rejects every company described
+        with the other.
+        """
+        key = value.strip().lower().replace("_", " ")
+        return _SECTOR_ALIASES.get(key, key)
+
     @classmethod
     def from_string(cls, value: str) -> "Sector":
         """
@@ -300,6 +332,17 @@ class Sector(str, Enum):
         raise ValueError(
             f"Unknown sector: '{value}'. " f"Valid sectors: {', '.join(valid_sectors[:6])}..."
         )
+
+
+#: Provider-specific sector names, mapped to the lower-cased GICS name.
+_SECTOR_ALIASES = {
+    "technology": "information technology",
+    "healthcare": "health care",
+    "financial services": "financials",
+    "consumer defensive": "consumer staples",
+    "consumer cyclical": "consumer discretionary",
+    "basic materials": "materials",
+}
 
 
 class Industry(str, Enum):

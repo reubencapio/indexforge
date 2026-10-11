@@ -8,6 +8,7 @@ all components (universe, selection, weighting, data, calculation).
 import json
 import logging
 from dataclasses import dataclass
+from datetime import date as date_cls
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ import pandas as pd
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import Currency, IndexType
 from indexforge.core.universe import Universe
+from indexforge.data.fx import convert_market_caps
 from indexforge.data.provider import DataProvider
 from indexforge.rebalancing.schedule import RebalancingSchedule
 from indexforge.selection.criteria import SelectionCriteria
@@ -140,6 +142,8 @@ class Index:
         self._constituents: list[Constituent] = []
         self._divisor: float = 1.0
         self._last_calculation_date: str | None = None
+        self._exclusions: dict[str, str] = {}
+        self._unconverted: dict[str, str] = {}
 
     @staticmethod
     def create(
@@ -324,16 +328,48 @@ class Index:
         # Fetch constituent data
         constituents = self._data_provider.get_constituent_data(tickers, as_of_date)
 
-        # Filter by universe criteria
-        eligible = self._universe.filter(constituents)
+        # Market caps arrive in each stock's trading currency. Bring them onto
+        # the index currency before any rule compares them.
+        self._unconverted = convert_market_caps(
+            constituents,
+            self._currency,
+            lambda base, quote: self._data_provider.get_fx_rate(base, quote, as_of_date),
+        )
+
+        # Filter by universe criteria, keeping the reason for each rejection
+        exclusions: dict[str, str] = {}
+        returned = {c.ticker for c in constituents}
+        for ticker in tickers:
+            if ticker not in returned:
+                exclusions[ticker] = "no market data"
+
+        eligible = []
+        for constituent in constituents:
+            reason = self._universe.ineligibility_reason(constituent)
+            if reason is None:
+                eligible.append(constituent)
+            else:
+                exclusions[constituent.ticker] = reason
 
         # Apply selection criteria if set
         if self._selection_criteria:
             selected = self._selection_criteria.select(
                 eligible, self._constituents  # Pass current for buffer rules
             )
+            chosen = {c.ticker for c in selected}
+            passed = {c.ticker for c in eligible if self._selection_criteria.passes_filters(c)}
+            for constituent in eligible:
+                if constituent.ticker in chosen:
+                    continue
+                exclusions[constituent.ticker] = (
+                    "ranked outside the selection"
+                    if constituent.ticker in passed
+                    else "does not match the selection filters"
+                )
         else:
             selected = eligible
+
+        self._exclusions = exclusions
 
         # Calculate weights
         weights = self._weighting_method.calculate_weights(selected)
@@ -349,6 +385,7 @@ class Index:
                 self._divisor = total_price_weight / self._base_value
 
         self._constituents = selected
+        self._last_calculation_date = as_of_date
 
     def get_constituents(self, date: str | None = None) -> list[Constituent]:
         """
@@ -365,6 +402,10 @@ class Index:
             >>> for c in constituents:
             ...     print(f"{c.ticker}: {c.weight:.2%}")
         """
+        if date is None and self._last_calculation_date is None:
+            # Never built: build as of today rather than returning an empty list
+            # that looks like "no company qualified".
+            date = date_cls.today().isoformat()
         if date and date != self._last_calculation_date:
             self._update_constituents(date)
         return self._constituents
@@ -709,6 +750,16 @@ class Index:
     def validation_rules(self) -> ValidationRules:
         """Get the validation rules."""
         return self._validation_rules
+
+    @property
+    def exclusions(self) -> dict[str, str]:
+        """Candidates left out of the last build, with the reason for each."""
+        return dict(self._exclusions)
+
+    @property
+    def unconverted(self) -> dict[str, str]:
+        """Tickers whose market cap could not be converted, with their currency."""
+        return dict(self._unconverted)
 
     @property
     def constituents(self) -> list[Constituent]:

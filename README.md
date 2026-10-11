@@ -1,306 +1,243 @@
-# IndexMaker
+# indexforge
 
-A domain-driven Python module for creating, managing, and analyzing financial indices. Designed for index professionals.
+Build rules-based stock indices from a spec file, in Python or from the command line.
 
-[![CI](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml/badge.svg)](https://github.com/reubencapio/indexmaker/actions/workflows/ci.yml)
-[![PyPI version](https://badge.fury.io/py/indexforge.svg)](https://badge.fury.io/py/indexforge)
+[![CI](https://github.com/reubencapio/indexforge/actions/workflows/ci.yml/badge.svg)](https://github.com/reubencapio/indexforge/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/indexforge.svg)](https://pypi.org/project/indexforge/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-## Features
+An index is a list of candidate companies plus rules: which ones qualify, how
+many to keep, how to weight them. indexforge takes that description as a small
+YAML file and gives you the members and their weights. Give someone else the
+file and they get the same index.
 
-- **Domain-Driven Design**: API uses terminology familiar to index professionals
-- **Fluent Interface**: Chainable methods for intuitive configuration
-- **Type-Safe**: Full type hints for IDE support and early error detection
-- **Interchangeable Data Sources**: Easily swap between free (Yahoo Finance) and proprietary data
-- **Production-Ready**: Includes validation, backtesting, and comprehensive testing
+It is the engine behind [IndexMaker](https://www.indexmaker.ai).
 
-## Installation
-
-### From PyPI
+## Install
 
 ```bash
 pip install indexforge
 ```
 
-### Using Poetry (Development)
+Python 3.10 to 3.12. Market data comes from Yahoo Finance by default, with no
+API key needed.
+
+## Quick start
 
 ```bash
-# Clone the repository
-git clone https://github.com/reubencapio/indexmaker.git
-cd indexforge
-
-# Install with Poetry
-poetry install
-
-# Activate the virtual environment
-poetry shell
+indexforge init my_index.yaml     # write a starter spec
+indexforge build my_index.yaml    # fetch data, apply the rules, print the index
 ```
 
-### From Source
+```text
+US Tech Leaders (USTECH)
+As of 2026-10-11 | 5 members | data: Yahoo Finance
+
+Ticker  Name                       Market cap (USD)    Weight
+NVDA    NVIDIA Corporation        4,000,000,000,000    30.00%
+AAPL    Apple Inc.                3,500,000,000,000    28.11%
+...
+
+Left out:
+  ADBE: ranked outside the selection
+  ...
+```
+
+Every candidate that did not make it is listed with the reason. (The figures
+above are illustrative.)
+
+## The spec
+
+```yaml
+spec_version: 1
+name: EU Quantum Enablers
+identifier: EUQENABL
+currency: EUR
+base_date: "2025-01-01"
+base_value: 1000
+
+universe:
+  # Every candidate is listed, so the result does not depend on who runs this.
+  tickers: [ASML.AS, IFX.DE, STMPA.PA, BESI.AS, SOI.PA, AIXA.DE, JEN.DE, HO.PA]
+  countries: [Germany, France, Netherlands]
+  sectors: [Technology, Industrials]
+  min_market_cap: 500000000        # in the index currency
+
+selection:
+  rank_by: MARKET_CAP
+  top: 5
+
+weighting:
+  method: equal_weight             # equal_weight | market_cap | free_float_market_cap
+
+rebalancing:
+  frequency: quarterly             # monthly | quarterly | semi_annual | annual
+```
+
+| Section | Setting | Meaning |
+|---|---|---|
+| `universe` | `tickers` | Required. The candidates, as Yahoo Finance symbols. |
+| | `countries`, `exclude_countries` | Keep or drop by country of domicile. |
+| | `sectors`, `exclude_sectors` | Keep or drop by sector. GICS and Yahoo names both work. |
+| | `min_market_cap`, `max_market_cap` | Size limits, in the index currency. |
+| | `min_average_daily_volume` | Minimum average shares traded per day. |
+| | `min_free_float` | Minimum free float, from 0 to 1. |
+| `selection` | `rank_by` | Factor to rank by, such as `MARKET_CAP` or `DIVIDEND_YIELD`. |
+| | `top` | How many to keep. Omit to keep every candidate that qualifies. |
+| | `theme_keywords`, `theme_match` | Keep companies whose description mentions `any` or `all` of the keywords. |
+| | `min_dividend_yield` | Minimum dividend yield, as a fraction. |
+| `weighting` | `method`, `max_weight` | Weighting scheme and an optional cap per member. |
+| `rebalancing` | `frequency` | How often the index is reviewed. |
+
+A setting the tool does not recognise is an error. A misspelt rule that is
+quietly ignored would give you an index that is not the one you described.
+
+More specs are in [`examples/specs`](examples/specs).
+
+## Getting the same result as someone else
+
+Market data moves, so the same spec built on different days can give different
+members. To make a result exactly repeatable, record the data along with it:
 
 ```bash
-# Install from GitHub
-pip install git+https://github.com/reubencapio/indexmaker.git
+# Build, and save the market data that was used
+indexforge build my_index.yaml --save-data my_index.data.json
+
+# Anyone with both files gets the identical index: offline, on any day
+indexforge build my_index.yaml --data my_index.data.json
 ```
 
-## Quick Start
+The data file holds the figures as the source reported them, plus the exchange
+rates used, so the result can be checked as well as repeated.
 
-### Create a Simple Index
+Without a data file, a build is repeatable to the extent the data source is:
+Yahoo Finance reports current market caps only, so `--as-of` fixes the exchange
+rates and the date on the output, not the market caps.
+
+## Command line reference
+
+```text
+indexforge init [PATH] [--force]        write a starter spec (default: index.yaml)
+indexforge validate SPEC                check a spec without fetching data
+indexforge build SPEC                   build the index
+    --as-of DATE                        build date, YYYY-MM-DD (default: today)
+    --format table|csv|json             output format (default: table)
+    -o, --output FILE                   write to a file
+    --source yahoo|openbb               live data source (default: yahoo)
+    --save-data FILE                    record the market data used
+    --data FILE                         replay recorded market data
+indexforge -v ...                       show data warnings
+```
+
+Exit codes: `0` success, `1` the build failed or no candidate met the rules,
+`2` the spec or the arguments are invalid.
+
+## Using it from Python
+
+The same build, as a function:
 
 ```python
-from indexforge import Index, Universe, WeightingMethod, Currency
+from indexforge import build
 
-# Create an index
-index = Index.create(
-    name="Tech Leaders Index",
-    identifier="TECHLDRS",
-    currency=Currency.USD,
-    base_date="2025-01-01",
-    base_value=1000.0
-)
+result = build("my_index.yaml")
 
-# Define the universe
-universe = Universe.from_tickers(["AAPL", "MSFT", "GOOGL", "AMZN", "META"])
+for c in result.constituents:
+    print(f"{c.ticker}: {c.weight:.2%}")
 
-# Configure
-index.set_universe(universe)
-index.set_weighting_method(WeightingMethod.equal_weight())
-
-# Get constituents
-constituents = index.get_constituents(date="2025-11-15")
-for c in constituents:
-    print(f"{c.ticker}: {c.name} - {c.weight:.2%}")
+print(result.exclusions)   # {"ADBE": "ranked outside the selection", ...}
 ```
 
-### Market Cap Weighted Index with Caps
+Or construct an index directly, which also allows custom ranking functions and
+filters that a spec file cannot express:
 
 ```python
 from indexforge import (
-    Index, Universe, SelectionCriteria, WeightingMethod,
-    RebalancingSchedule, Currency, Factor
+    Currency, Factor, Index, RebalancingSchedule, SelectionCriteria,
+    Universe, WeightingMethod,
 )
 
-# Create the index
 index = Index.create(
-    name="Tech Leaders Index",
+    name="Tech Leaders",
     identifier="TECHLDRS",
     currency=Currency.USD,
     base_date="2025-01-01",
-    base_value=1000.0
+    base_value=1000,
 )
 
-# Define universe with criteria
 universe = (Universe.builder()
-    .asset_class("EQUITIES")
-    .sectors(["Technology"])
-    .min_market_cap(1_000_000_000)
+    .tickers(["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META"])
+    .min_market_cap(1_000_000_000_000)
     .build()
 )
 
-# Select top 50 by market cap
 selection = (SelectionCriteria.builder()
     .ranking_by(Factor.MARKET_CAP)
-    .select_top(50)
-    .apply_buffer_rules(add_threshold=45, remove_threshold=60)
+    .select_top(5)
     .build()
 )
 
-# Market cap weighting with 10% cap
-weighting = (WeightingMethod.market_cap()
-    .with_cap(max_weight=0.10)
-    .build()
-)
+weighting = WeightingMethod.market_cap().with_cap(max_weight=0.30).build()
 
-# Quarterly rebalancing
-rebalancing = RebalancingSchedule.quarterly()
-
-# Configure the index
 (index
     .set_universe(universe)
     .set_selection_criteria(selection)
     .set_weighting_method(weighting)
-    .set_rebalancing_schedule(rebalancing)
+    .set_rebalancing_schedule(RebalancingSchedule.quarterly())
 )
 
-# Backtest
-result = index.backtest(
-    start_date="2024-01-01",
-    end_date="2024-12-31"
-)
-print(f"Sharpe Ratio: {result.sharpe_ratio:.2f}")
+for c in index.get_constituents():
+    print(f"{c.ticker}: {c.name} - {c.weight:.2%}")
 ```
 
-### Using Custom Data Source
+### Your own data source
+
+Implement `DataConnector` to use a database, a vendor feed or a file:
 
 ```python
-from indexforge import DataConnector, DataProvider, Constituent
 import pandas as pd
+from indexforge import Constituent, DataConnector, build
 
-class MyDataConnector(DataConnector):
-    """Your custom data source."""
-
+class MyData(DataConnector):
     def get_prices(self, tickers, start_date, end_date):
-        # Fetch from your database/API
         return pd.DataFrame(...)
 
     def get_constituent_data(self, tickers, as_of_date=None):
-        # Return list of Constituent objects
         return [Constituent(ticker=t, ...) for t in tickers]
 
     def get_market_cap(self, tickers, as_of_date=None):
-        return {t: market_cap for t in tickers}
+        return {t: ... for t in tickers}
 
-# Use custom data
-provider = (DataProvider.builder()
-    .add_source("mydata", MyDataConnector())
-    .set_default("mydata")
-    .build()
-)
+    def get_fx_rate(self, base, quote, as_of_date=None):
+        return ...   # units of `quote` per unit of `base`, or None
 
-index.set_data_provider(provider)
+result = build("my_index.yaml", connector=MyData())
 ```
 
-## Architecture
+OpenBB is available as an optional source: `pip install "indexforge[openbb]"`.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    User API Layer                        │
-│   Index.create() → set_universe() → calculate()         │
-├──────────────────────────────────────────────────────────┤
-│                  Domain Model Layer                      │
-│   Index │ Universe │ Constituent │ SelectionCriteria    │
-├──────────────────────────────────────────────────────────┤
-│                   Strategy Layer                         │
-│   WeightingMethod │ RebalancingSchedule │ Validation    │
-├──────────────────────────────────────────────────────────┤
-│                    Data Layer                            │
-│   DataProvider → DataConnector (Yahoo, Custom, etc.)    │
-└──────────────────────────────────────────────────────────┘
-```
+## What it does not do
 
-## Core Concepts
-
-### 1. Index
-The main entry point. Represents a financial index.
-
-### 2. Universe
-Defines which securities are eligible for inclusion (asset class, region, market cap, etc.)
-
-### 3. SelectionCriteria
-How constituents are chosen from the universe (top N by factor, composite scoring, etc.)
-
-### 4. WeightingMethod
-How constituents are weighted (equal, market cap, factor-based, custom)
-
-### 5. RebalancingSchedule
-When the index is updated (quarterly, monthly, annual)
-
-### 6. DataProvider
-Abstraction for market data - swap between free and proprietary sources
-
-## Examples
-
-See the `examples/` directory:
-
-- `simple_index.py` - Basic equal-weighted index
-- `market_cap_index.py` - Full-featured market cap weighted index
-- `custom_data_source.py` - Using your own data source
-
-Run examples:
-
-```bash
-poetry run python examples/simple_index.py
-poetry run python examples/market_cap_index.py
-poetry run python examples/custom_data_source.py
-```
+- **It does not discover companies.** You supply the candidates. That is what
+  makes the result repeatable.
+- **It does not give historical market caps** with the default data source, so
+  it cannot rebuild what an index would have held on a past date.
+- **It is not investment advice**, and Yahoo Finance data is unofficial and can
+  be wrong or missing. Check figures that matter against a primary source.
 
 ## Development
 
 ```bash
-# Install dependencies
+git clone https://github.com/reubencapio/indexforge.git
+cd indexforge
 poetry install
-
-# Run all tests
 poetry run pytest
-
-# Run with coverage
-poetry run pytest --cov=indexforge
-
-# Format code
-poetry run black src/ tests/ examples/
-
-# Lint code
-poetry run ruff check src/ tests/ examples/
-
-# Type check
-poetry run mypy src/indexforge
 ```
 
-Or use the Makefile shortcuts:
-
-```bash
-make test       # Run tests
-make coverage   # Tests with coverage
-make format     # Format with Black
-make lint       # Run Ruff + Mypy
-make all        # Format + Lint + Test
-```
-
-## Project Structure
-
-```
-indexmaker/
-├── src/indexforge/
-│   ├── core/           # Domain models (Index, Universe, Constituent)
-│   ├── selection/      # Selection criteria and factors
-│   ├── weighting/      # Weighting methods
-│   ├── rebalancing/    # Rebalancing schedules
-│   ├── data/           # Data providers and connectors
-│   └── validation/     # Validation rules
-├── tests/              # Unit tests
-├── examples/           # Usage examples
-└── docs/               # Documentation
-```
-
-## Key Design Principles
-
-1. **Domain Language**: API uses industry terminology (constituents, rebalancing, weighting)
-2. **Data Source Agnostic**: Core logic separated from data fetching
-3. **Type Safety**: Full type hints and validation
-4. **Builder Pattern**: Fluent configuration for complex objects
-5. **Testability**: Components can be tested in isolation
-
-## Documentation
-
-- [API Design Proposal](API_DESIGN_PROPOSAL.md) - Complete API specification
-- [Quick Reference](API_QUICK_REFERENCE.md) - Common patterns cheat sheet
-- [Free Data Sources](FREE_DATA_SOURCES.md) - Using Yahoo Finance and other free data
-- [Design Rationale](DESIGN_RATIONALE.md) - Why the API is designed this way
-- [Module Structure](MODULE_STRUCTURE.md) - Architecture details
-
-## Requirements
-
-- Python 3.10+
-- pandas >= 2.0.0
-- numpy >= 1.24.0
-- yfinance >= 0.2.0 (for free data)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the checks CI runs, and
+[CHANGELOG.md](CHANGELOG.md) for what changed between versions.
 
 ## License
 
-GNU Affero General Public License v3.0 or later - see LICENSE file for details.
-
-## Contributing
-
-Contributions welcome! Please read the contributing guidelines first.
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new functionality
-4. Submit a pull request
-
-## Acknowledgments
-
-Inspired by industry-standard index methodologies.
+AGPL-3.0-or-later. See [LICENSE](LICENSE). If you run a modified version as a
+network service, the AGPL requires you to offer its source to your users.

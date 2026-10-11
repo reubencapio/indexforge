@@ -1,13 +1,10 @@
-# Pre-commit hooks for indexmaker
 # Install: pip install pre-commit && pre-commit install
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.10.0
     hooks:
       - id: black
-        args: [--line-length=100]
-        language_version: python3.10
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.13.3

@@ -100,3 +100,6 @@ node_modules/
 # Don't ignore lock files
 !package-lock.json
 !poetry.lock
+
+# Local Poetry settings
+poetry.toml

@@ -119,53 +119,71 @@ class Universe:
         Returns:
             True if eligible, False otherwise
         """
+        return self.ineligibility_reason(constituent) is None
+
+    def ineligibility_reason(self, constituent: Constituent) -> str | None:
+        """
+        Why a constituent falls outside the universe, or None if it is eligible.
+
+        The first rule that fails is reported, in the order the rules are listed
+        on the universe, so the same input always gives the same explanation.
+
+        Args:
+            constituent: The constituent to check
+
+        Returns:
+            A short human-readable reason, or None
+        """
+        c = constituent
+
         # If tickers are specified, only allow those
-        if self.tickers and constituent.ticker not in self.tickers:
-            return False
+        if self.tickers and c.ticker not in self.tickers:
+            return "not in the ticker list"
 
         # Country filtering
-        if self.countries and constituent.country not in self.countries:
-            return False
-        if self.exclude_countries and constituent.country in self.exclude_countries:
-            return False
+        if self.countries and c.country not in self.countries:
+            return f"country {c.country or 'unknown'} is not in the universe"
+        if self.exclude_countries and c.country in self.exclude_countries:
+            return f"country {c.country} is excluded"
 
         # Sector filtering
-        if self.sectors and constituent.sector not in self.sectors:
-            return False
-        if self.exclude_sectors and constituent.sector in self.exclude_sectors:
-            return False
+        sector = Sector.canonical(c.sector)
+        if self.sectors and sector not in {Sector.canonical(s) for s in self.sectors}:
+            return f"sector {c.sector or 'unknown'} is not in the universe"
+        if self.exclude_sectors and sector in {Sector.canonical(s) for s in self.exclude_sectors}:
+            return f"sector {c.sector} is excluded"
 
         # Industry filtering
-        if self.industries and constituent.industry not in self.industries:
-            return False
+        if self.industries and c.industry not in self.industries:
+            return f"industry {c.industry or 'unknown'} is not in the universe"
 
         # Market cap filtering
-        if self.min_market_cap is not None and constituent.market_cap < self.min_market_cap:
-            return False
-        if self.max_market_cap is not None and constituent.market_cap > self.max_market_cap:
-            return False
+        if self.min_market_cap is not None and c.market_cap < self.min_market_cap:
+            return "market cap is below the minimum"
+        if self.max_market_cap is not None and c.market_cap > self.max_market_cap:
+            return "market cap is above the maximum"
 
         # Volume filtering
         if self.min_average_daily_volume is not None:
-            if constituent.average_daily_volume < self.min_average_daily_volume:
-                return False
+            if c.average_daily_volume < self.min_average_daily_volume:
+                return "average daily volume is below the minimum"
 
         # Free float filtering
         if self.min_free_float is not None:
-            if constituent.free_float_factor < self.min_free_float:
-                return False
+            if c.free_float_factor < self.min_free_float:
+                return "free float is below the minimum"
 
         # ESG screening
         if self.esg_screening:
-            if not self._passes_esg_screening(constituent):
-                return False
+            if not self._passes_esg_screening(c):
+                return "fails ESG screening"
 
         # Custom filters
         for custom_filter in self.custom_filters:
-            if not custom_filter(constituent):
-                return False
+            if not custom_filter(c):
+                return "rejected by a custom filter"
 
-        return True
+        return None
 
     def _passes_esg_screening(self, constituent: Constituent) -> bool:
         """Check if constituent passes ESG screening."""

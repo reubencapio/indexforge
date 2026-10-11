@@ -1,0 +1,24 @@
+# An index, described as data. Build it with:  indexforge build <this file>
+spec_version: 1
+name: US Tech Leaders
+identifier: USTECH
+currency: USD
+base_date: "2025-01-01"
+base_value: 1000
+
+universe:
+  # Every candidate is listed, so the result does not depend on who runs this.
+  tickers: [AAPL, MSFT, NVDA, GOOGL, AMZN, META, AVGO, ORCL, CRM, ADBE]
+  # Amounts are in the index currency.
+  min_market_cap: 100000000000
+
+selection:
+  rank_by: MARKET_CAP
+  top: 5
+
+weighting:
+  method: market_cap        # equal_weight | market_cap | free_float_market_cap
+  max_weight: 0.30
+
+rebalancing:
+  frequency: quarterly      # monthly | quarterly | semi_annual | annual

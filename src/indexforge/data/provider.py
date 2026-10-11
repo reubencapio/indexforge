@@ -134,6 +134,12 @@ class DataProvider:
         connector = self.get_connector(source)
         return connector.get_constituent_data(tickers, as_of_date)
 
+    def get_fx_rate(
+        self, base: str, quote: str, as_of_date: str | None = None, source: str | None = None
+    ) -> float | None:
+        """Exchange rate from `base` to `quote`, or None if the source has none."""
+        return self.get_connector(source).get_fx_rate(base, quote, as_of_date)
+
     def get_market_cap(
         self, tickers: list[str], as_of_date: str | None = None, source: str | None = None
     ) -> dict[str, float]:

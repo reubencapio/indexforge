@@ -117,7 +117,7 @@ pip install openbb
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
-from indexmaker import DataConnector
+from indexforge import DataConnector
 
 class YahooFinanceConnector(DataConnector):
     """Free data connector using Yahoo Finance."""
@@ -183,7 +183,7 @@ class YahooFinanceConnector(DataConnector):
 ### Using the Yahoo Finance Connector
 
 ```python
-from indexmaker import Index, Universe, DataProvider, WeightingMethod, Currency
+from indexforge import Index, Universe, DataProvider, WeightingMethod, Currency
 
 # Create the free data connector
 yahoo_connector = YahooFinanceConnector()

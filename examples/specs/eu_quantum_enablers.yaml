@@ -1,0 +1,24 @@
+# Build with:  indexforge build examples/specs/eu_quantum_enablers.yaml
+spec_version: 1
+name: EU Quantum Enablers
+identifier: EUQENABL
+description: >-
+  Large EU technology and industrial companies that supply the hardware,
+  photonics and security that quantum computing depends on. Europe has very few
+  listed pure-play quantum companies, so this is an enablers index, not a
+  pure-play one.
+currency: EUR
+base_date: "2025-01-01"
+base_value: 1000
+universe:
+  tickers: [ASML.AS, ERIC-B.ST, SAP.DE, SIE.DE, AIR.PA, DTE.DE, IFX.DE, NXPI, NOKIA.HE, HO.PA, STMPA.PA, ORA.PA, DSY.PA, LDO.MI, CAP.PA, BESI.AS, SOI.PA, AIXA.DE, SOP.PA, JEN.DE]
+  countries: [Germany, France, Netherlands, Italy, Spain, Sweden, Finland, Ireland, Denmark, Belgium, Austria]
+  sectors: [Technology, Industrials]
+  min_market_cap: 500000000
+selection:
+  rank_by: MARKET_CAP
+  top: 20
+weighting:
+  method: equal_weight
+rebalancing:
+  frequency: quarterly
