@@ -20,6 +20,7 @@ from indexforge.data.fx import parse_currency
 from indexforge.data.screening import (
     PRIMARY_EXCHANGES,
     REGION_CURRENCY,
+    SECONDARY_LINES,
     YAHOO_REGIONS,
     yahoo_sector,
 )
@@ -352,6 +353,9 @@ class YahooFinanceConnector(DataConnector):
                 if quote.get("quoteType") != "EQUITY" or not quote.get("symbol"):
                     continue
                 ticker = quote["symbol"]
+                secondary = SECONDARY_LINES.get(region)
+                if secondary and secondary.search(ticker):
+                    continue
                 name = quote.get("longName") or quote.get("shortName") or ticker
                 volume = float(quote.get("averageDailyVolume3Month") or 0)
                 # Highest volume wins; the ticker breaks ties so the choice is stable.

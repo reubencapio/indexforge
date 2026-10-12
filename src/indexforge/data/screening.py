@@ -8,6 +8,8 @@ pass: every candidate's details are then fetched and the universe rules applied
 to its actual country of domicile.
 """
 
+import re
+
 from indexforge.core.types import Sector
 
 #: Country name (as in `Country`) to the region code Yahoo uses for its exchanges.
@@ -112,6 +114,15 @@ REGION_CURRENCY: dict[str, str] = {
 PRIMARY_EXCHANGES: dict[str, list[str]] = {
     "de": ["GER"],
     "us": ["NMS", "NYQ", "NGM", "NCM", "ASE"],
+}
+
+#: Tickers that are a foreign company's secondary line on a region's exchange.
+#: London lists international shares under four-character codes starting with a
+#: zero ("0R2V.L") and depositary receipts on its order book (".IL"). In a
+#: sample of 798 such lines, one belonged to a company based in the UK; the
+#: rest were companies found through their home exchange, or not wanted at all.
+SECONDARY_LINES: dict[str, re.Pattern[str]] = {
+    "gb": re.compile(r"^0[A-Z0-9]{3}\.L$|\.IL$"),
 }
 
 #: Canonical (GICS, lower-case) sector name to the name Yahoo files it under.

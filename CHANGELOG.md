@@ -20,6 +20,13 @@ All notable changes to this project are documented here. The format follows
   `FINNHUB_API_KEY`). See the README for what each can and cannot do.
 - `DataSourceError`, raised when a data source cannot answer.
 
+### Changed
+
+- A United Kingdom screen no longer considers foreign companies' secondary
+  London lines (codes like `0R2V.L`, and `.IL` depositary receipts). They were
+  about a third of the candidates of a Europe-wide screen and almost none are
+  UK companies.
+
 ### Fixed
 
 - A build no longer returns a wrong or empty index when Yahoo Finance limits

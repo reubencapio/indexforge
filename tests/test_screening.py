@@ -226,6 +226,19 @@ class TestYahooScreen:
             "BBB.DE": {"average_daily_volume": 5.0},
         }
 
+    def test_foreign_companies_secondary_london_lines_are_not_candidates(self, yahoo, monkeypatch):
+        connector, _ = yahoo
+        london = [
+            {"symbol": "VOD.L", "longName": "Vodafone Group", "quoteType": "EQUITY"},
+            {"symbol": "0R2V.L", "longName": "Apple Inc.", "quoteType": "EQUITY"},
+            {"symbol": "SMSN.IL", "longName": "Samsung GDR", "quoteType": "EQUITY"},
+        ]
+        monkeypatch.setattr(connector, "_screen_all", lambda yf, query: london)
+
+        assert connector.screen(["United Kingdom"], min_market_cap=1e9) == ["VOD.L"]
+        # The same shape of ticker elsewhere is left alone.
+        assert "0R2V.L" in connector.screen(["Germany"], min_market_cap=1e9)
+
     def test_query_carries_region_exchange_sector_and_a_loose_size_floor(self, yahoo):
         connector, calls = yahoo
         connector.screen(["Germany"], ["Information Technology"], 1_000_000_000, "EUR")
