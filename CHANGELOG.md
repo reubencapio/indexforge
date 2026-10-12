@@ -13,10 +13,16 @@ All notable changes to this project are documented here. The format follows
   countries are skipped and reported in `BuildResult.unscreened`, in the JSON
   output and in the table. A screen still fails if none of its countries can
   be searched.
+- A build no longer returns a wrong or empty index when Yahoo Finance limits
+  requests. Refused requests used to come back as companies with no country
+  and no size, which the rules then dropped, so the result depended on how
+  many requests got through. Requests are now retried after a wait, and if
+  Yahoo keeps refusing the build fails with `DataSourceError`.
 
 ### Added
 
 - `DataConnector.unscreenable_countries`.
+- `DataSourceError`, raised when a data source cannot answer.
 - Yahoo screening for Colombia and the United Arab Emirates.
 
 ## [0.3.0] - 2026-10-11

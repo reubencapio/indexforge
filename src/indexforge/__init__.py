@@ -45,7 +45,7 @@ from indexforge.core.types import (
     Sector,
 )
 from indexforge.core.universe import Universe, UniverseBuilder
-from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.base import DataConnector, DataSourceError
 from indexforge.data.connectors.snapshot import RecordingConnector, SnapshotConnector
 from indexforge.data.connectors.yahoo import YahooFinanceConnector
 from indexforge.data.provider import DataProvider, DataProviderBuilder
@@ -96,6 +96,7 @@ __all__ = [
     "DataProvider",
     "DataProviderBuilder",
     "DataConnector",
+    "DataSourceError",
     "YahooFinanceConnector",
     "RecordingConnector",
     "SnapshotConnector",

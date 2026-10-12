@@ -21,7 +21,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from indexforge import __version__
-from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.base import DataConnector, DataSourceError
 from indexforge.data.connectors.snapshot import SnapshotConnector
 from indexforge.spec import BuildResult, SpecError, build, load_spec
 
@@ -73,7 +73,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except SpecError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    except (OSError, ValueError, NotImplementedError) as e:
+    except (OSError, ValueError, NotImplementedError, DataSourceError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
 
