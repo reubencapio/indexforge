@@ -144,6 +144,7 @@ class Index:
         self._last_calculation_date: str | None = None
         self._exclusions: dict[str, str] = {}
         self._unconverted: dict[str, str] = {}
+        self._unscreened: list[str] = []
 
     @staticmethod
     def create(
@@ -400,6 +401,7 @@ class Index:
             raise ValueError("A screened universe needs at least one country")
         if universe.min_market_cap is None:
             raise ValueError("A screened universe needs a minimum market cap, to bound the search")
+        self._unscreened = self._data_provider.unscreenable_countries(list(universe.countries))
         return self._data_provider.screen(
             countries=list(universe.countries),
             sectors=list(universe.sectors) or None,
@@ -775,6 +777,11 @@ class Index:
     def exclusions(self) -> dict[str, str]:
         """Candidates left out of the last build, with the reason for each."""
         return dict(self._exclusions)
+
+    @property
+    def unscreened(self) -> list[str]:
+        """Countries in the universe that the data source could not search."""
+        return list(self._unscreened)
 
     @property
     def unconverted(self) -> dict[str, str]:

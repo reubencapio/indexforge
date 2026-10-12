@@ -82,8 +82,12 @@ class RecordingConnector(DataConnector):
         self._screen = {
             "request": _screen_request(countries, sectors, min_market_cap, currency),
             "tickers": list(tickers),
+            "unscreened": self._inner.unscreenable_countries(countries),
         }
         return tickers
+
+    def unscreenable_countries(self, countries: list[str]) -> list[str]:
+        return self._inner.unscreenable_countries(countries)
 
     def get_name(self) -> str:
         return self._inner.get_name()
@@ -176,6 +180,9 @@ class SnapshotConnector(DataConnector):
                 "(countries, sectors, minimum market cap or currency). Build without --data."
             )
         return list(recorded["tickers"])
+
+    def unscreenable_countries(self, countries: list[str]) -> list[str]:
+        return list((self._snapshot.get("screen") or {}).get("unscreened", []))
 
     def get_name(self) -> str:
         return f"Snapshot ({self._snapshot.get('source', 'unknown source')})"

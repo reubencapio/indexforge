@@ -238,11 +238,18 @@ class YahooFinanceConnector(DataConnector):
         yf = self._get_yfinance()
         from yfinance import EquityQuery
 
-        unknown = sorted(c for c in countries if c not in YAHOO_REGIONS)
-        if unknown:
-            raise ValueError(f"Yahoo Finance cannot screen these countries: {', '.join(unknown)}")
         if not countries:
             raise ValueError("Screening needs at least one country")
+        # Countries Yahoo has no exchange for are skipped, not fatal: an "EU"
+        # index should not fail because Luxembourg has no Yahoo region. The
+        # caller reports them via unscreenable_countries.
+        skipped = self.unscreenable_countries(countries)
+        countries = [c for c in countries if c not in skipped]
+        if not countries:
+            raise ValueError(
+                f"Yahoo Finance covers no exchange in: {', '.join(skipped)}. "
+                "Choose other countries or list the tickers."
+            )
 
         yahoo_sectors: list[str] = []
         for sector in sectors or []:
@@ -282,6 +289,9 @@ class YahooFinanceConnector(DataConnector):
                     best[name] = (volume, ticker)
 
         return sorted(ticker for _, ticker in best.values())
+
+    def unscreenable_countries(self, countries: list[str]) -> list[str]:
+        return sorted(c for c in countries if c not in YAHOO_REGIONS)
 
     def _screen_all(self, yf: Any, query: Any) -> list[dict]:
         """Every result of a screen, following Yahoo's pagination."""

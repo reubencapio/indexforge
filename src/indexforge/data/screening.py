@@ -57,6 +57,8 @@ YAHOO_REGIONS: dict[str, str] = {
     "Saudi Arabia": "sa",
     "South Africa": "za",
     "Egypt": "eg",
+    "Colombia": "co",
+    "United Arab Emirates": "ae",
 }
 
 #: Currency market caps are quoted in on each region's exchanges.

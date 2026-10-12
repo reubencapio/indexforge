@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-12
+
+### Fixed
+
+- A screen no longer fails when the data source has no exchange for one of the
+  universe's countries (Yahoo has none for Luxembourg, for example). Those
+  countries are skipped and reported in `BuildResult.unscreened`, in the JSON
+  output and in the table. A screen still fails if none of its countries can
+  be searched.
+
+### Added
+
+- `DataConnector.unscreenable_countries`.
+- Yahoo screening for Colombia and the United Arab Emirates.
+
 ## [0.3.0] - 2026-10-11
 
 ### Added

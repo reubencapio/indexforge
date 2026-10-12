@@ -237,6 +237,16 @@ class DataConnector(ABC):
             "List the candidate tickers in the universe instead."
         )
 
+    def unscreenable_countries(self, countries: list[str]) -> list[str]:
+        """
+        Which of these countries a screen would not search.
+
+        A source may simply have no exchange for a country (Yahoo has none for
+        Luxembourg). A screen skips those rather than failing, and this lets the
+        caller say so instead of implying the country had no qualifying company.
+        """
+        return []
+
     def is_available(self) -> bool:
         """
         Check if the data connector is available and working.

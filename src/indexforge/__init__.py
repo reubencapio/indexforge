@@ -64,7 +64,7 @@ except ImportError:
     IndexAI = None  # type: ignore
     IndexAIConfig = None  # type: ignore
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     # Core
