@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-12
+
+### Added
+
+- **Stored company details.** `CachedConnector` wraps a data source and keeps
+  each company's name, country, sector and description in a `CompanyStore`
+  (`SqliteCompanyStore` for a file, or your own). A screen then fetches details
+  only for companies it has not seen in the last seven days. Sizes, prices and
+  volumes are never read from the store. On the command line: `--cache FILE`.
+- The Yahoo screen keeps the sizes it already receives with each result
+  (`DataConnector.screened_quotes`), which is what makes stored details usable.
+- **Two more data sources**, each needing a free API key: Financial Modeling
+  Prep (`--source fmp`, `FMP_API_KEY`) and Finnhub (`--source finnhub`,
+  `FINNHUB_API_KEY`). See the README for what each can and cannot do.
+- `DataSourceError`, raised when a data source cannot answer.
+
+### Fixed
+
+- A build no longer returns a wrong or empty index when Yahoo Finance limits
+  requests. Refused requests used to come back as companies with no country
+  and no size, which the rules then dropped, so the result depended on how
+  many requests got through. Requests are now retried after a wait, and the
+  build fails with `DataSourceError` if Yahoo keeps refusing or returns blank
+  answers for more than a few companies.
+
 ## [0.3.1] - 2026-10-12
 
 ### Fixed
@@ -13,16 +38,10 @@ All notable changes to this project are documented here. The format follows
   countries are skipped and reported in `BuildResult.unscreened`, in the JSON
   output and in the table. A screen still fails if none of its countries can
   be searched.
-- A build no longer returns a wrong or empty index when Yahoo Finance limits
-  requests. Refused requests used to come back as companies with no country
-  and no size, which the rules then dropped, so the result depended on how
-  many requests got through. Requests are now retried after a wait, and if
-  Yahoo keeps refusing the build fails with `DataSourceError`.
 
 ### Added
 
 - `DataConnector.unscreenable_countries`.
-- `DataSourceError`, raised when a data source cannot answer.
 - Yahoo screening for Colombia and the United Arab Emirates.
 
 ## [0.3.0] - 2026-10-11

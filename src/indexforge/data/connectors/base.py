@@ -215,6 +215,17 @@ class DataConnector(ABC):
         """
         return 1.0 if base == quote else None
 
+    def screened_quotes(self) -> dict[str, dict[str, float]]:
+        """
+        Current figures the last screen already returned, by ticker.
+
+        A screen that returns each company's size along with its ticker saves a
+        request per company. Keys are `market_cap`, `price` and
+        `average_daily_volume`, each present only if the source supplied it.
+        Empty for a source whose screen returns tickers alone.
+        """
+        return {}
+
     def screen(
         self,
         countries: list[str],

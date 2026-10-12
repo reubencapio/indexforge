@@ -116,3 +116,22 @@ def test_cli_reports_the_limit_and_exits_1(yahoo, tmp_path, capsys):
 
     assert main(["build", str(spec)]) == 1
     assert "limiting requests" in capsys.readouterr().err
+
+
+def test_many_blank_answers_fail_instead_of_reading_as_unknown_companies(yahoo, monkeypatch):
+    connector, _ = yahoo
+    monkeypatch.setattr(
+        connector,
+        "_get_stock_info",
+        lambda stock, ticker: {} if ticker != "AAA.DE" else {"country": "Germany"},
+    )
+
+    with pytest.raises(DataSourceError, match="no data for 9 of 10"):
+        connector.get_constituent_data(["AAA.DE", *[f"X{i}.DE" for i in range(9)]])
+
+
+def test_a_few_unknown_tickers_are_not_a_failure(yahoo, monkeypatch):
+    connector, _ = yahoo
+    monkeypatch.setattr(connector, "_get_stock_info", lambda stock, ticker: {})
+
+    assert len(connector.get_constituent_data(["TYPO1", "TYPO2", "TYPO3"])) == 3

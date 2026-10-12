@@ -188,7 +188,13 @@ class TestYahooScreen:
 
         quotes = [
             {"symbol": "AAA.DE", "longName": "Alpha AG", "averageDailyVolume3Month": 10},
-            {"symbol": "AAA2.DE", "longName": "Alpha AG", "averageDailyVolume3Month": 500},
+            {
+                "symbol": "AAA2.DE",
+                "longName": "Alpha AG",
+                "averageDailyVolume3Month": 500,
+                "marketCap": 8e9,
+                "regularMarketPrice": 42.0,
+            },
             {"symbol": "BBB.DE", "longName": "Beta SE", "averageDailyVolume3Month": 5},
             {"symbol": "FUND.DE", "longName": "A Fund", "quoteType": "ETF"},
         ]
@@ -211,6 +217,14 @@ class TestYahooScreen:
     def test_one_ticker_per_company_most_traded_line_wins(self, yahoo):
         connector, _ = yahoo
         assert connector.screen(["Germany"]) == ["AAA2.DE", "BBB.DE"]
+
+    def test_sizes_the_screen_returned_are_kept_for_the_chosen_lines(self, yahoo):
+        connector, _ = yahoo
+        connector.screen(["Germany"], min_market_cap=1e9)
+        assert connector.screened_quotes() == {
+            "AAA2.DE": {"market_cap": 8e9, "price": 42.0, "average_daily_volume": 500.0},
+            "BBB.DE": {"average_daily_volume": 5.0},
+        }
 
     def test_query_carries_region_exchange_sector_and_a_loose_size_floor(self, yahoo):
         connector, calls = yahoo

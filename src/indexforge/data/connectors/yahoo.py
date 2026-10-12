@@ -34,6 +34,12 @@ SCREEN_MAX_RESULTS = 5000
 #: Seconds to wait before each retry when Yahoo answers "too many requests".
 RATE_LIMIT_WAITS: tuple[float, ...] = (2.0, 8.0, 30.0)
 
+#: Yahoo sometimes answers a throttled request with nothing rather than an
+#: error. A few blank answers are tickers Yahoo does not know; more than this
+#: many, and more than this share of the request, means the data is incomplete.
+MAX_BLANK_ANSWERS = 3
+MAX_BLANK_SHARE = 0.1
+
 T = TypeVar("T")
 
 
@@ -104,6 +110,8 @@ class YahooFinanceConnector(DataConnector):
         self._info_cache: dict[str, dict] = {}
         self._fx_cache: dict[str, float] = {}
         self._throttled: DataSourceError | None = None
+        self._blank: set[str] = set()
+        self._quotes: dict[str, dict[str, float]] = {}
         self._yf = None
 
     def _get_yfinance(self):
@@ -180,8 +188,18 @@ class YahooFinanceConnector(DataConnector):
         # One request per ticker, so they are made concurrently. `map` returns
         # results in input order, which keeps the output order deterministic.
         self._throttled = None
+        self._blank = set()
         with ThreadPoolExecutor(max_workers=min(self._max_workers, len(tickers))) as pool:
-            return list(pool.map(self._fetch_constituent, tickers))
+            constituents = list(pool.map(self._fetch_constituent, tickers))
+
+        blank = len(self._blank)
+        if blank > MAX_BLANK_ANSWERS and blank > MAX_BLANK_SHARE * len(tickers):
+            raise DataSourceError(
+                f"Yahoo Finance returned no data for {blank} of {len(tickers)} companies, "
+                "which usually means it is limiting requests from this address. Wait a "
+                "few minutes and try again, or narrow the search."
+            )
+        return constituents
 
     def _request(self, fetch: Callable[[], T]) -> T:
         """
@@ -221,6 +239,8 @@ class YahooFinanceConnector(DataConnector):
         try:
             stock = yf.Ticker(ticker)
             info = self._get_stock_info(stock, ticker)
+            if not info.get("marketCap") and not info.get("country"):
+                self._blank.add(ticker)
 
             constituent = Constituent(
                 ticker=ticker,
@@ -308,6 +328,7 @@ class YahooFinanceConnector(DataConnector):
                 yahoo_sectors.append(name)
 
         self._throttled = None
+        self._quotes = {}
         best: dict[str, tuple[float, str]] = {}  # company name -> (volume, ticker)
         for country in countries:
             region = YAHOO_REGIONS[country]
@@ -336,8 +357,19 @@ class YahooFinanceConnector(DataConnector):
                 # Highest volume wins; the ticker breaks ties so the choice is stable.
                 if name not in best or (-volume, ticker) < (-best[name][0], best[name][1]):
                     best[name] = (volume, ticker)
+                figures = {
+                    "market_cap": quote.get("marketCap"),
+                    "price": quote.get("regularMarketPrice"),
+                    "average_daily_volume": quote.get("averageDailyVolume3Month"),
+                }
+                self._quotes[ticker] = {k: float(v) for k, v in figures.items() if v}
 
-        return sorted(ticker for _, ticker in best.values())
+        tickers = sorted(ticker for _, ticker in best.values())
+        self._quotes = {ticker: self._quotes[ticker] for ticker in tickers}
+        return tickers
+
+    def screened_quotes(self) -> dict[str, dict[str, float]]:
+        return dict(self._quotes)
 
     def unscreenable_countries(self, countries: list[str]) -> list[str]:
         return sorted(c for c in countries if c not in YAHOO_REGIONS)
@@ -422,7 +454,7 @@ class YahooFinanceConnector(DataConnector):
             return self._info_cache[ticker]
 
         try:
-            info: dict = self._request(lambda: stock.info)
+            info: dict = self._request(lambda: stock.info) or {}
             if self._cache_enabled:
                 self._info_cache[ticker] = info
             return info

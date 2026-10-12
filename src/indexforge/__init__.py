@@ -46,9 +46,13 @@ from indexforge.core.types import (
 )
 from indexforge.core.universe import Universe, UniverseBuilder
 from indexforge.data.connectors.base import DataConnector, DataSourceError
+from indexforge.data.connectors.cached import CachedConnector
+from indexforge.data.connectors.finnhub import FinnhubConnector
+from indexforge.data.connectors.fmp import FMPConnector
 from indexforge.data.connectors.snapshot import RecordingConnector, SnapshotConnector
 from indexforge.data.connectors.yahoo import YahooFinanceConnector
 from indexforge.data.provider import DataProvider, DataProviderBuilder
+from indexforge.data.store import CompanyStore, MemoryCompanyStore, SqliteCompanyStore
 from indexforge.rebalancing.schedule import RebalancingSchedule, RebalancingScheduleBuilder
 from indexforge.selection.composite import CompositeScore, CompositeScoreBuilder
 from indexforge.selection.criteria import SelectionCriteria, SelectionCriteriaBuilder
@@ -64,7 +68,7 @@ except ImportError:
     IndexAI = None  # type: ignore
     IndexAIConfig = None  # type: ignore
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 __all__ = [
     # Core
@@ -97,6 +101,12 @@ __all__ = [
     "DataProviderBuilder",
     "DataConnector",
     "DataSourceError",
+    "CachedConnector",
+    "FMPConnector",
+    "FinnhubConnector",
+    "CompanyStore",
+    "MemoryCompanyStore",
+    "SqliteCompanyStore",
     "YahooFinanceConnector",
     "RecordingConnector",
     "SnapshotConnector",

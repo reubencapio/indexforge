@@ -1,6 +1,6 @@
 [project]
 name = "indexforge"
-version = "0.3.1"
+version = "0.4.0"
 description = "Build rules-based financial indices from a spec file, in Python or from the command line"
 authors = [{name = "Reuben Capio", email = "reuben@indexmaker.io"}]
 license = "AGPL-3.0-or-later"
