@@ -22,7 +22,9 @@ def get_json(provider: str, url: str, params: dict[str, Any]) -> Any:
         DataSourceError: If the provider refuses, limits or cannot be reached.
     """
     query = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
-    request = urllib.request.Request(f"{url}?{query}", headers={"User-Agent": "indexforge"})  # noqa: S310 - https URLs built by the connectors
+    request = urllib.request.Request(
+        f"{url}?{query}", headers={"User-Agent": "indexforge"}
+    )  # noqa: S310 - https URLs built by the connectors
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310
             return json.loads(response.read().decode("utf-8"))

@@ -44,9 +44,11 @@ class Market(DataConnector):
         self.answers_left -= len(tickers)
         self.requested.extend(tickers)
         return [
-            Constituent.from_dict(self.companies[t].to_dict())
-            if t in self.companies
-            else Constituent(ticker=t, name=t)
+            (
+                Constituent.from_dict(self.companies[t].to_dict())
+                if t in self.companies
+                else Constituent(ticker=t, name=t)
+            )
             for t in tickers
         ]
 
