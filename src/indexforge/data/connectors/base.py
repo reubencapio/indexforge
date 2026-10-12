@@ -12,6 +12,15 @@ import pandas as pd
 from indexforge.core.constituent import Constituent
 
 
+class DataSourceError(RuntimeError):
+    """
+    The data source could not answer, so no trustworthy result exists.
+
+    Raised instead of returning partial data: an index built from the
+    companies that happened to load would differ from one run to the next.
+    """
+
+
 class DataConnector(ABC):
     """
     Abstract base class for data connectors.
