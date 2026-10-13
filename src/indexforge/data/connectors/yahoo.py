@@ -38,6 +38,8 @@ RATE_LIMIT_WAITS: tuple[float, ...] = (2.0, 8.0, 30.0)
 #: Yahoo sometimes answers a throttled request with nothing rather than an
 #: error. A few blank answers are tickers Yahoo does not know; more than this
 #: many, and more than this share of the request, means the data is incomplete.
+#: A security Yahoo describes but gives no size or country for (a listed bond,
+#: say) is not a blank answer.
 MAX_BLANK_ANSWERS = 3
 MAX_BLANK_SHARE = 0.1
 
@@ -240,7 +242,7 @@ class YahooFinanceConnector(DataConnector):
         try:
             stock = yf.Ticker(ticker)
             info = self._get_stock_info(stock, ticker)
-            if not info.get("marketCap") and not info.get("country"):
+            if not any(info.get(key) for key in ("quoteType", "marketCap", "country")):
                 self._blank.add(ticker)
 
             constituent = Constituent(

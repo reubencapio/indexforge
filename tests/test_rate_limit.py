@@ -135,3 +135,15 @@ def test_a_few_unknown_tickers_are_not_a_failure(yahoo, monkeypatch):
     monkeypatch.setattr(connector, "_get_stock_info", lambda stock, ticker: {})
 
     assert len(connector.get_constituent_data(["TYPO1", "TYPO2", "TYPO3"])) == 3
+
+
+def test_securities_without_a_size_or_country_are_not_blank_answers(yahoo, monkeypatch):
+    # Listed bonds: Yahoo answers in full, with no market cap and no country.
+    connector, _ = yahoo
+    monkeypatch.setattr(
+        connector,
+        "_get_stock_info",
+        lambda stock, ticker: {"quoteType": "EQUITY", "longName": "Bank 1.3% 2027"},
+    )
+
+    assert len(connector.get_constituent_data([f"BOND{i}.PA" for i in range(10)])) == 10
