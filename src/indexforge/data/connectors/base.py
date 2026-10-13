@@ -12,6 +12,15 @@ import pandas as pd
 from indexforge.core.constituent import Constituent
 
 
+class DataSourceError(RuntimeError):
+    """
+    The data source could not answer, so no trustworthy result exists.
+
+    Raised instead of returning partial data: an index built from the
+    companies that happened to load would differ from one run to the next.
+    """
+
+
 class DataConnector(ABC):
     """
     Abstract base class for data connectors.
@@ -205,6 +214,17 @@ class DataConnector(ABC):
             The rate, or None if this connector cannot supply it
         """
         return 1.0 if base == quote else None
+
+    def screened_quotes(self) -> dict[str, dict[str, float]]:
+        """
+        Current figures the last screen already returned, by ticker.
+
+        A screen that returns each company's size along with its ticker saves a
+        request per company. Keys are `market_cap`, `price` and
+        `average_daily_volume`, each present only if the source supplied it.
+        Empty for a source whose screen returns tickers alone.
+        """
+        return {}
 
     def screen(
         self,

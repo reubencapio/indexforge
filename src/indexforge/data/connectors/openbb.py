@@ -85,7 +85,7 @@ class OpenBBConnector(DataConnector):
                 self._obb = obb
             except ImportError:
                 raise ImportError(
-                    "OpenBB is required for OpenBBConnector. " "Install it with: pip install openbb"
+                    "OpenBB is required for OpenBBConnector. Install it with: pip install openbb"
                 )
         return self._obb
 

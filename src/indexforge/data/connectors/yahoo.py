@@ -5,18 +5,22 @@ A free data connector using the yfinance library.
 """
 
 import logging
+import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from functools import partial
+from typing import Any, TypeVar
 
 import pandas as pd
 
 from indexforge.core.constituent import Constituent
 from indexforge.core.types import Currency
-from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.base import DataConnector, DataSourceError
 from indexforge.data.fx import parse_currency
 from indexforge.data.screening import (
     PRIMARY_EXCHANGES,
     REGION_CURRENCY,
+    SECONDARY_LINES,
     YAHOO_REGIONS,
     yahoo_sector,
 )
@@ -27,6 +31,23 @@ logger = logging.getLogger(__name__)
 #: turn into tens of thousands of follow-up requests.
 SCREEN_PAGE_SIZE = 250
 SCREEN_MAX_RESULTS = 5000
+
+#: Seconds to wait before each retry when Yahoo answers "too many requests".
+RATE_LIMIT_WAITS: tuple[float, ...] = (2.0, 8.0, 30.0)
+
+#: Yahoo sometimes answers a throttled request with nothing rather than an
+#: error. A few blank answers are tickers Yahoo does not know; more than this
+#: many, and more than this share of the request, means the data is incomplete.
+#: A security Yahoo describes but gives no size or country for (a listed bond,
+#: say) is not a blank answer.
+MAX_BLANK_ANSWERS = 3
+MAX_BLANK_SHARE = 0.1
+
+T = TypeVar("T")
+
+
+def _is_rate_limit(error: Exception) -> bool:
+    return type(error).__name__ == "YFRateLimitError" or "Too Many Requests" in str(error)
 
 
 def _any_of(query_cls: Any, field: str, values: list[str]) -> Any:
@@ -91,6 +112,9 @@ class YahooFinanceConnector(DataConnector):
         self._price_cache: dict[str, pd.DataFrame] = {}
         self._info_cache: dict[str, dict] = {}
         self._fx_cache: dict[str, float] = {}
+        self._throttled: DataSourceError | None = None
+        self._blank: set[str] = set()
+        self._quotes: dict[str, dict[str, float]] = {}
         self._yf = None
 
     def _get_yfinance(self):
@@ -166,15 +190,60 @@ class YahooFinanceConnector(DataConnector):
 
         # One request per ticker, so they are made concurrently. `map` returns
         # results in input order, which keeps the output order deterministic.
+        self._throttled = None
+        self._blank = set()
         with ThreadPoolExecutor(max_workers=min(self._max_workers, len(tickers))) as pool:
-            return list(pool.map(self._fetch_constituent, tickers))
+            constituents = list(pool.map(self._fetch_constituent, tickers))
+
+        blank = len(self._blank)
+        if blank > MAX_BLANK_ANSWERS and blank > MAX_BLANK_SHARE * len(tickers):
+            raise DataSourceError(
+                f"Yahoo Finance returned no data for {blank} of {len(tickers)} companies, "
+                "which usually means it is limiting requests from this address. Wait a "
+                "few minutes and try again, or narrow the search."
+            )
+        return constituents
+
+    def _request(self, fetch: Callable[[], T]) -> T:
+        """
+        Run one Yahoo request, waiting and retrying while Yahoo limits us.
+
+        Raises:
+            DataSourceError: If Yahoo is still refusing after the last wait.
+                Later requests then fail at once instead of each waiting again.
+        """
+        for wait in (*RATE_LIMIT_WAITS, None):
+            if self._throttled is not None:
+                raise self._throttled
+            try:
+                return fetch()
+            except Exception as e:
+                if not _is_rate_limit(e):
+                    raise
+                if wait is None:
+                    self._throttled = DataSourceError(
+                        "Yahoo Finance is limiting requests from this address, so the "
+                        "data is incomplete. Wait a few minutes and try again, or narrow "
+                        "the search: fewer countries, a sector, or a higher minimum size."
+                    )
+                    raise self._throttled from e
+                time.sleep(wait)
+        raise AssertionError("unreachable")
 
     def _fetch_constituent(self, ticker: str) -> Constituent:
-        """Fetch one constituent. Never raises: a failure yields a bare record."""
+        """
+        Fetch one constituent. A ticker Yahoo does not know yields a bare record.
+
+        Raises:
+            DataSourceError: If Yahoo is rate-limiting, since a bare record would
+                then be indistinguishable from a company with no data.
+        """
         yf = self._get_yfinance()
         try:
             stock = yf.Ticker(ticker)
             info = self._get_stock_info(stock, ticker)
+            if not any(info.get(key) for key in ("quoteType", "marketCap", "country")):
+                self._blank.add(ticker)
 
             constituent = Constituent(
                 ticker=ticker,
@@ -210,6 +279,8 @@ class YahooFinanceConnector(DataConnector):
 
             return constituent
 
+        except DataSourceError:
+            raise
         except Exception as e:
             logger.warning(f"Error fetching data for {ticker}: {e}")
             # Create minimal constituent
@@ -259,6 +330,8 @@ class YahooFinanceConnector(DataConnector):
             if name not in yahoo_sectors:
                 yahoo_sectors.append(name)
 
+        self._throttled = None
+        self._quotes = {}
         best: dict[str, tuple[float, str]] = {}  # company name -> (volume, ticker)
         for country in countries:
             region = YAHOO_REGIONS[country]
@@ -282,13 +355,27 @@ class YahooFinanceConnector(DataConnector):
                 if quote.get("quoteType") != "EQUITY" or not quote.get("symbol"):
                     continue
                 ticker = quote["symbol"]
+                secondary = SECONDARY_LINES.get(region)
+                if secondary and secondary.search(ticker):
+                    continue
                 name = quote.get("longName") or quote.get("shortName") or ticker
                 volume = float(quote.get("averageDailyVolume3Month") or 0)
                 # Highest volume wins; the ticker breaks ties so the choice is stable.
                 if name not in best or (-volume, ticker) < (-best[name][0], best[name][1]):
                     best[name] = (volume, ticker)
+                figures = {
+                    "market_cap": quote.get("marketCap"),
+                    "price": quote.get("regularMarketPrice"),
+                    "average_daily_volume": quote.get("averageDailyVolume3Month"),
+                }
+                self._quotes[ticker] = {k: float(v) for k, v in figures.items() if v}
 
-        return sorted(ticker for _, ticker in best.values())
+        tickers = sorted(ticker for _, ticker in best.values())
+        self._quotes = {ticker: self._quotes[ticker] for ticker in tickers}
+        return tickers
+
+    def screened_quotes(self) -> dict[str, dict[str, float]]:
+        return dict(self._quotes)
 
     def unscreenable_countries(self, countries: list[str]) -> list[str]:
         return sorted(c for c in countries if c not in YAHOO_REGIONS)
@@ -297,12 +384,15 @@ class YahooFinanceConnector(DataConnector):
         """Every result of a screen, following Yahoo's pagination."""
         quotes: list[dict] = []
         while len(quotes) < SCREEN_MAX_RESULTS:
-            page = yf.screen(
-                query,
-                size=SCREEN_PAGE_SIZE,
-                offset=len(quotes),
-                sortField="intradaymarketcap",
-                sortAsc=False,
+            page: dict = self._request(
+                partial(
+                    yf.screen,
+                    query,
+                    size=SCREEN_PAGE_SIZE,
+                    offset=len(quotes),
+                    sortField="intradaymarketcap",
+                    sortAsc=False,
+                )
             )
             batch = page.get("quotes") or []
             quotes.extend(batch)
@@ -347,11 +437,15 @@ class YahooFinanceConnector(DataConnector):
             pair = yf.Ticker(f"{base}{quote}=X")
             if as_of_date:
                 end = pd.Timestamp(as_of_date) + pd.Timedelta(days=1)
-                hist = pair.history(start=end - pd.Timedelta(days=10), end=end)
+                hist = self._request(
+                    lambda: pair.history(start=end - pd.Timedelta(days=10), end=end)
+                )
             else:
-                hist = pair.history(period="5d")
+                hist = self._request(lambda: pair.history(period="5d"))
             if not hist.empty:
                 rate = float(hist["Close"].dropna().iloc[-1])
+        except DataSourceError:
+            raise
         except Exception as e:
             logger.warning(f"Error fetching FX rate {base}/{quote}: {e}")
 
@@ -366,10 +460,12 @@ class YahooFinanceConnector(DataConnector):
             return self._info_cache[ticker]
 
         try:
-            info: dict = stock.info
+            info: dict = self._request(lambda: stock.info) or {}
             if self._cache_enabled:
                 self._info_cache[ticker] = info
             return info
+        except DataSourceError:
+            raise
         except Exception:
             return {}
 

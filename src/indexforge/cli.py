@@ -21,12 +21,15 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from indexforge import __version__
-from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.base import DataConnector, DataSourceError
 from indexforge.data.connectors.snapshot import SnapshotConnector
 from indexforge.spec import BuildResult, SpecError, build, load_spec
 
 #: Above this many, the table summarises exclusions by reason.
 MAX_LISTED_EXCLUSIONS = 25
+
+#: Live data sources `build --source` accepts.
+SOURCES = ("yahoo", "openbb", "fmp", "finnhub")
 
 EXAMPLE_SPEC = """\
 # An index, described as data. Build it with:  indexforge build <this file>
@@ -73,7 +76,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except SpecError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    except (OSError, ValueError, NotImplementedError) as e:
+    except (OSError, ValueError, NotImplementedError, DataSourceError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
 
@@ -112,9 +115,16 @@ def _parser() -> argparse.ArgumentParser:
     build_cmd.add_argument("-o", "--output", metavar="FILE", help="write to a file, not stdout")
     build_cmd.add_argument(
         "--source",
-        choices=("yahoo", "openbb"),
+        choices=SOURCES,
         default="yahoo",
-        help="live data source (default: yahoo)",
+        help="live data source (default: yahoo). fmp and finnhub need an API key in "
+        "FMP_API_KEY or FINNHUB_API_KEY",
+    )
+    build_cmd.add_argument(
+        "--cache",
+        metavar="FILE",
+        help="keep company details in this file between builds, so a screen "
+        "does not fetch every company again",
     )
     build_cmd.add_argument(
         "--data", metavar="FILE", help="replay a recorded data snapshot instead of live data"
@@ -165,6 +175,11 @@ def _build(args: argparse.Namespace) -> int:
         as_of = as_of or snapshot.as_of
     else:
         connector = _live_connector(args.source)
+        if args.cache:
+            from indexforge.data.connectors.cached import CachedConnector
+            from indexforge.data.store import SqliteCompanyStore
+
+            connector = CachedConnector(connector, SqliteCompanyStore(args.cache))
 
     result = build(spec, as_of=as_of, connector=connector)
 
@@ -196,6 +211,15 @@ def _live_connector(source: str) -> DataConnector:
                 'The OpenBB source is not installed. Run: pip install "indexforge[openbb]"'
             )
         return OpenBBConnector()
+
+    if source == "fmp":
+        from indexforge.data.connectors.fmp import FMPConnector
+
+        return FMPConnector()
+    if source == "finnhub":
+        from indexforge.data.connectors.finnhub import FinnhubConnector
+
+        return FinnhubConnector()
 
     from indexforge.data.connectors.yahoo import YahooFinanceConnector
 

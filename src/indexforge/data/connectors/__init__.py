@@ -1,6 +1,9 @@
 """Data connectors for various data sources."""
 
-from indexforge.data.connectors.base import DataConnector
+from indexforge.data.connectors.base import DataConnector, DataSourceError
+from indexforge.data.connectors.cached import CachedConnector
+from indexforge.data.connectors.finnhub import FinnhubConnector
+from indexforge.data.connectors.fmp import FMPConnector
 from indexforge.data.connectors.snapshot import RecordingConnector, SnapshotConnector
 from indexforge.data.connectors.yahoo import YahooFinanceConnector
 
@@ -12,6 +15,10 @@ except ImportError:
 
 __all__ = [
     "DataConnector",
+    "DataSourceError",
+    "CachedConnector",
+    "FMPConnector",
+    "FinnhubConnector",
     "YahooFinanceConnector",
     "RecordingConnector",
     "SnapshotConnector",

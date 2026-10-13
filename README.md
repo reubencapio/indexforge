@@ -120,6 +120,25 @@ candidates and a run time of tens of seconds. Two things to know:
 
 Screening needs a data source that supports it. Yahoo Finance does.
 
+### Keeping company details between builds
+
+A screen needs each candidate's country and description, and sources hand
+those out one company per request while limiting how many requests they take.
+A broad screen (a continent, no sector) can exceed what Yahoo Finance accepts
+in one go; the build then stops with an error rather than returning the
+companies that happened to load.
+
+`--cache` keeps the details in a file, so they are fetched once:
+
+```bash
+indexforge build my_index.yaml --cache companies.sqlite
+```
+
+Only what changes slowly is kept (name, country, sector, description), for
+seven days. Sizes and prices always come fresh from the screen. If a build is
+stopped by the source's limit, what it fetched is saved, and running it again a
+few minutes later continues from there.
+
 A setting the tool does not recognise is an error. A misspelt rule that is
 quietly ignored would give you an index that is not the one you described.
 
@@ -155,7 +174,8 @@ indexforge build SPEC                   build the index
     --as-of DATE                        build date, YYYY-MM-DD (default: today)
     --format table|csv|json             output format (default: table)
     -o, --output FILE                   write to a file
-    --source yahoo|openbb               live data source (default: yahoo)
+    --source yahoo|fmp|finnhub|openbb   live data source (default: yahoo)
+    --cache FILE                        keep company details between builds
     --save-data FILE                    record the market data used
     --data FILE                         replay recorded market data
 indexforge -v ...                       show data warnings
@@ -245,7 +265,19 @@ class MyData(DataConnector):
 result = build("my_index.yaml", connector=MyData())
 ```
 
-OpenBB is available as an optional source: `pip install "indexforge[openbb]"`.
+## Data sources
+
+| Source | `--source` | Key | Finds companies by rule | Notes |
+|---|---|---|---|---|
+| Yahoo Finance | `yahoo` | none | yes | The default. Unofficial, and limits bursts of requests. |
+| Financial Modeling Prep | `fmp` | `FMP_API_KEY` | if your plan includes the screener | The free plan has a small daily allowance and limited coverage outside the US. |
+| Finnhub | `finnhub` | `FINNHUB_API_KEY` | no | Name, country, industry and size only: no descriptions, so no themes. |
+| OpenBB | `openbb` | none | no | `pip install "indexforge[openbb]"`. Reads Yahoo data unless you configure paid providers. |
+
+A request a plan does not cover fails with a message saying so; it is never
+treated as "no data". The same spec built from two sources can give different
+members, because sources disagree on sizes, sectors and descriptions. A data
+file from `--save-data` records which source was used.
 
 ## What it does not do
 
